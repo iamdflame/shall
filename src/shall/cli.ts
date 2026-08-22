@@ -13,7 +13,7 @@ import { minimiseWitness } from './oracle/minimise.js';
 import { canonical as canonicalOutcome, display as displayOutcome } from './execute/sandbox.js';
 import { suggestRewrites, applyRewrite } from './suggest/suggest.js';
 import { writeFileSync as writeFile } from 'node:fs';
-import { attribute, lintVagueness } from './attribute/attribute.js';
+import { attribute, attributePairs, lintVagueness } from './attribute/attribute.js';
 import { renderAmbiguity, renderSuccess, renderVaguenessOnly, renderConformance, renderSuggestions } from './report/terminal.js';
 import { deriveExpectations } from './conform/expectations.js';
 import { checkConformance, conformanceBlocks } from './conform/check.js';
@@ -286,8 +286,19 @@ async function analyse(file: string, flags: Flags) {
   const vagueness = lintVagueness(program);
   // Arithmetic artefacts must never implicate a clause.
   const attributions = attribute(program, oracle.behaviourDivergences, probes);
+  // Ambiguity often lives between two precise clauses rather than inside one
+  // vague clause. A named vague phrase is strong evidence and wins outright;
+  // a weak statistical association does not, and should not suppress a pair
+  // that accounts for every disagreement.
+  const topAttribution = attributions[0];
+  const weakSingleClause =
+    topAttribution !== undefined && topAttribution.vagueTerm === undefined && topAttribution.lift < 0.15;
+  const pairs =
+    attributions.length === 0 || weakSingleClause
+      ? attributePairs(program, oracle.behaviourDivergences, probes)
+      : [];
 
-  return { program, config, oracle, verdict, vagueness, attributions, compiled, root };
+  return { program, config, oracle, verdict, vagueness, attributions, pairs, compiled, root };
 }
 
 /**
@@ -349,7 +360,7 @@ async function runConformance(
 }
 
 async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<number> {
-  const { program, config, oracle, verdict, vagueness, attributions, compiled, root } =
+  const { program, config, oracle, verdict, vagueness, attributions, pairs, compiled, root } =
     await analyse(file, flags);
 
   if (flags.json) {
@@ -386,7 +397,7 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
   if (!verdict.ok) {
     process.stdout.write(
       renderAmbiguity({
-        program, oracle, attributions, vagueness,
+        program, oracle, attributions, pairs, vagueness,
         failures: compiled.failures,
         reason: verdict.reason,
       }),

@@ -1,6 +1,6 @@
 import type { Program } from '../lang/types.js';
 import type { OracleResult, Divergence } from '../oracle/differential.js';
-import type { Attribution, VaguenessWarning } from '../attribute/attribute.js';
+import type { Attribution, VaguenessWarning, PairAttribution } from '../attribute/attribute.js';
 import type { CompileFailure } from '../compile/compiler.js';
 
 /**
@@ -109,13 +109,14 @@ export interface AmbiguityReportInput {
   program: Program;
   oracle: OracleResult;
   attributions: Attribution[];
+  pairs?: PairAttribution[];
   vagueness: VaguenessWarning[];
   failures: CompileFailure[];
   reason: string;
 }
 
 export function renderAmbiguity(input: AmbiguityReportInput): string {
-  const { program, oracle, attributions, vagueness, failures, reason } = input;
+  const { program, oracle, attributions, pairs = [], vagueness, failures, reason } = input;
   const out: string[] = [];
 
   out.push('');
@@ -141,7 +142,28 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
     out.push(...diagnostic(program, attribution, vagueness, witness));
   }
 
-  if (attributions.length === 0 && oracle.behaviourDivergences.length > 0) {
+  if (pairs.length > 0) {
+    for (const pair of pairs.slice(0, 2)) {
+      out.push(dim(RULE));
+      out.push('');
+      out.push(`  ${amber('No single clause is responsible - these two interact')}`);
+      out.push(`      ${dim(pair.evidence)}`);
+      out.push('');
+      out.push(`   ${grey(`${program.path}:${pair.a.line}`)}  ${pair.a.raw}`);
+      out.push(`   ${grey(`${program.path}:${pair.b.line}`)}  ${pair.b.raw}`);
+      out.push('');
+      out.push(`   ${amber('Neither says which applies first.')}`);
+      out.push('');
+      const w = oracle.behaviourDivergences[0];
+      if (w) {
+        out.push(`   ${bold('WITNESS')}  ${cyan(formatInput(w.minimalInput ?? w.probe.input))}`);
+        for (const reading of w.minimalReadings ?? w.readings) {
+          out.push(`     ${bold(reading.display.padEnd(16))} ${grey(reading.members.join(', '))}`);
+        }
+        out.push('');
+      }
+    }
+  } else if (attributions.length === 0 && oracle.behaviourDivergences.length > 0) {
     out.push(dim(RULE));
     out.push('');
     out.push(`  ${amber('The readers disagreed, but no single clause is clearly responsible.')}`);

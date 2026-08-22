@@ -196,3 +196,91 @@ export function lintVagueness(program: Program): VaguenessWarning[] {
   }
   return warnings;
 }
+
+/**
+ * When no single clause is responsible, look at pairs.
+ *
+ * Reporting "no single clause is clearly responsible" is a dead end for an
+ * author: it is true, and there is nothing to do about it. But ambiguity very
+ * often lives *between* two precise sentences rather than inside one vague one -
+ * two rules that are each unambiguous alone, and silent about which applies
+ * first. Half the probe budget is already reserved for input interactions, so
+ * the evidence for this is already collected.
+ *
+ * Only pairs are considered. Triples and beyond explode combinatorially and,
+ * with the probe counts involved here, would mostly report noise.
+ */
+export interface PairAttribution {
+  a: Criterion;
+  b: Criterion;
+  /** Share of disagreeing inputs that engage BOTH clauses. */
+  divergentRate: number;
+  /** Share of agreeing inputs that engage both. */
+  agreeingRate: number;
+  lift: number;
+  evidence: string;
+}
+
+const MAX_CLAUSES_FOR_PAIRS = 24;
+
+export function attributePairs(
+  program: Program,
+  divergences: Divergence[],
+  allProbes: Probe[],
+): PairAttribution[] {
+  if (divergences.length === 0) return [];
+
+  const criteria = programCriteria(program).filter((c) => c.pattern !== 'malformed');
+  if (criteria.length < 2 || criteria.length > MAX_CLAUSES_FOR_PAIRS) return [];
+
+  const divergentIds = new Set(divergences.map((d) => d.probe.id));
+  const divergentProbes = divergences.map((d) => d.probe);
+  const agreeingProbes = allProbes.filter((p) => !divergentIds.has(p.id));
+  if (divergentProbes.length === 0) return [];
+
+  // Engagement is computed once per clause rather than once per pair.
+  const engagement = new Map<string, { divergent: Set<string>; agreeing: Set<string> }>();
+  for (const criterion of criteria) {
+    engagement.set(criterion.id, {
+      divergent: new Set(divergentProbes.filter((p) => engages(criterion, p, program)).map((p) => p.id)),
+      agreeing: new Set(agreeingProbes.filter((p) => engages(criterion, p, program)).map((p) => p.id)),
+    });
+  }
+
+  const results: PairAttribution[] = [];
+  for (let i = 0; i < criteria.length; i++) {
+    for (let j = i + 1; j < criteria.length; j++) {
+      const a = criteria[i]!;
+      const b = criteria[j]!;
+      const ea = engagement.get(a.id)!;
+      const eb = engagement.get(b.id)!;
+
+      const bothDivergent = [...ea.divergent].filter((id) => eb.divergent.has(id)).length;
+      if (bothDivergent === 0) continue;
+      const bothAgreeing = [...ea.agreeing].filter((id) => eb.agreeing.has(id)).length;
+
+      const divergentRate = bothDivergent / divergentProbes.length;
+      const agreeingRate = agreeingProbes.length ? bothAgreeing / agreeingProbes.length : 0;
+      const lift = divergentRate - agreeingRate;
+
+      // Coverage first, lift second. A pair of broadly-applicable clauses has a
+      // small lift even when it accounts for every disagreement, because both
+      // are also engaged by most agreeing inputs. What identifies an ordering
+      // ambiguity is that the pair explains essentially ALL of the divergence,
+      // so that is the primary filter and lift only breaks ties.
+      if (divergentRate < 0.8) continue;
+      if (lift <= 0.02) continue;
+
+      results.push({
+        a, b, divergentRate, agreeingRate, lift,
+        evidence:
+          `engaged together by ${bothDivergent}/${divergentProbes.length} disagreeing inputs ` +
+          `but only ${bothAgreeing}/${agreeingProbes.length} agreeing ones`,
+      });
+    }
+  }
+
+  return results
+    .sort((x, y) => y.divergentRate - x.divergentRate || y.lift - x.lift)
+    .slice(0, 3);
+}

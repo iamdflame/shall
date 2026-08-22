@@ -48,7 +48,7 @@ const INTERESTING: Record<ScalarType, unknown[]> = {
 function valuesFor(type: ShallType, extraNumbers: number[] = [], sweep: { real: number[]; int: number[] } = { real: [], int: [] }): unknown[] {
   if (isListType(type)) {
     const inner = valuesFor(type.list, extraNumbers, sweep) as unknown[];
-    return [[], [inner[0]], [inner[0], inner[1]], inner.slice(0, 4)];
+    return listValues(inner, extraNumbers);
   }
   const base = INTERESTING[type];
   if (type === 'integer') {
@@ -59,6 +59,60 @@ function valuesFor(type: ShallType, extraNumbers: number[] = [], sweep: { real: 
     return dedupe([...base, ...extraNumbers, ...sweep.real]);
   }
   return base;
+}
+
+/**
+ * Interesting lists.
+ *
+ * A handful of prefixes of the element pool is nowhere near enough. Rules about
+ * collections almost always turn on *repetition* and *length* - "three or more
+ * dice show the same face", "if several players share a score" - and a list of
+ * distinct ascending values exercises none of that. A spec about five dice was
+ * getting four probes, none of which contained a repeated element, so the
+ * clause that actually mattered was never engaged.
+ *
+ * Lengths come from the specification's own literals where possible, since a
+ * rule saying "three or more" is only interesting at two, three and four.
+ */
+function listValues(inner: unknown[], literals: number[]): unknown[] {
+  const out: unknown[] = [[], [inner[0]]];
+  const first = inner[0];
+  const second = inner[1] ?? inner[0];
+  const third = inner[2] ?? inner[0];
+
+  // Lengths worth trying: small by default, plus any length the spec names.
+  const lengths = new Set<number>([2, 3, 5]);
+  for (const n of literals) {
+    if (Number.isInteger(n) && n >= 1 && n <= 12) {
+      lengths.add(n);
+      if (n > 1) lengths.add(n - 1);
+      lengths.add(n + 1);
+    }
+  }
+
+  for (const len of [...lengths].sort((a, b) => a - b).slice(0, 8)) {
+    // All the same - the strongest form of repetition.
+    out.push(Array.from({ length: len }, () => first));
+    // A majority the same, with the remainder different.
+    if (len >= 3) {
+      out.push([
+        ...Array.from({ length: len - 1 }, () => first),
+        second,
+      ]);
+      out.push([
+        ...Array.from({ length: Math.ceil(len / 2) }, () => first),
+        ...Array.from({ length: Math.floor(len / 2) }, () => second),
+      ]);
+    }
+    // All distinct, for the no-repetition branch.
+    out.push(Array.from({ length: len }, (_, i) => inner[i % inner.length]));
+    // Two pairs, which distinguishes "a set" from "the largest set".
+    if (len >= 4) {
+      out.push([first, first, second, second, ...Array.from({ length: len - 4 }, () => third)]);
+    }
+  }
+
+  return dedupe(out.map((v) => JSON.stringify(v))).map((v) => JSON.parse(v as string));
 }
 
 function dedupe(values: unknown[]): unknown[] {

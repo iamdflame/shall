@@ -1,0 +1,16 @@
+program WordCount
+
+Counts the significant words in a line of text.
+
+interface
+  input  text: string
+  output count: integer
+
+Requirement 1: Words
+  THE SYSTEM SHALL count the words in the text
+
+Requirement 2: Significance
+  THE SYSTEM SHALL ignore words shorter than three letters
+
+Requirement 3: Empty input
+  IF the text contains no words THEN the system SHALL return 0

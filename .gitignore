@@ -1,0 +1,7 @@
+node_modules/
+dist/
+keel-report.html
+*.log
+.DS_Store
+.env
+.shall/

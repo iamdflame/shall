@@ -1,0 +1,15 @@
+program Leaderboard
+
+Ranks a player's position on a scoreboard.
+
+interface
+  input  scores: list<integer>
+  input  playerScore: integer
+  output rank: integer
+
+Requirement 1: Ranking
+  THE SYSTEM SHALL return the player's rank when the scores are sorted from highest to lowest
+  IF several players share a score THEN the system SHALL give them the same rank
+
+Requirement 2: Edge cases
+  IF the scoreboard is empty THEN the system SHALL return 1

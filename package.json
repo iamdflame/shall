@@ -1,0 +1,37 @@
+{
+  "name": "shall",
+  "version": "0.1.0",
+  "description": "A language whose source code is English requirements. When independent readers disagree about what your specification means, that is a compile error.",
+  "type": "module",
+  "bin": {
+    "shall": "./dist/shall/cli.js"
+  },
+  "main": "./dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "pretest": "tsc -p tsconfig.json",
+    "test": "node --experimental-strip-types --test --test-reporter=tap tests/*.test.ts",
+    "shall": "node dist/shall/cli.js",
+    "verify": "node dist/shall/cli.js verify"
+  },
+  "keywords": [
+    "spec-driven-development",
+    "kiro",
+    "ears",
+    "ensemble",
+    "differential-testing",
+    "ambiguity"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "openai": "^7.5.0"
+  }
+}

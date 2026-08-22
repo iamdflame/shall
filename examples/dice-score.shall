@@ -1,0 +1,18 @@
+program DiceScore
+
+Scores a single roll of five dice under a simplified tabletop rule.
+
+interface
+  input  dice: list<integer>
+  output score: integer
+
+Requirement 1: Sets
+  IF three or more dice show the same face THEN the system SHALL score that face multiplied by one hundred
+  IF five dice show the same face THEN the system SHALL score two thousand instead
+
+Requirement 2: Singles
+  THE SYSTEM SHALL score each remaining die showing one as fifty points
+  THE SYSTEM SHALL score each remaining die showing five as ten points
+
+Requirement 3: Nothing
+  IF no rule above applies THEN the system SHALL return 0

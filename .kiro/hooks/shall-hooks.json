@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Verify the repository against its own specification",
+      "description": "Every acceptance criterion in .kiro/specs is bound to code and to a test. Re-verify on save so a claim that stops being true surfaces immediately rather than at review.",
+      "trigger": "PostFileSave",
+      "matcher": "^(src|tests)/.*\\.ts$",
+      "action": { "type": "command", "command": "npm run build --silent && node dist/shall/cli.js verify" },
+      "timeout": 300,
+      "enabled": true
+    },
+    {
+      "name": "Lint a specification the moment it is written",
+      "description": "shall lint needs no API key, so open wording can be caught on every save without spending a model call.",
+      "trigger": "PostFileSave",
+      "matcher": "\\.shall$",
+      "action": { "type": "command", "command": "node dist/shall/cli.js lint \"$KIRO_FILE\"" },
+      "timeout": 60,
+      "enabled": true
+    },
+    {
+      "name": "Re-verify when a requirement changes",
+      "description": "Editing a criterion voids its previous proof. This asks the agent to re-check rather than letting the baseline drift silently.",
+      "trigger": "PostFileSave",
+      "matcher": "^\\.kiro/specs/.*/requirements\\.md$",
+      "action": {
+        "type": "prompt",
+        "prompt": "A requirements document changed. Run `node dist/shall/cli.js verify --verbose` and report every criterion that is now unverified, orphaned or malformed. Do not refresh the baseline until all are conformant."
+      },
+      "timeout": 300,
+      "enabled": true
+    }
+  ]
+}

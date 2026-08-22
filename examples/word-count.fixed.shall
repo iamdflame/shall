@@ -1,0 +1,17 @@
+program WordCount
+
+Counts the significant tokens in a line of text.
+
+interface
+  input  text: string
+  output count: integer
+
+Requirement 1: Tokenisation
+  THE SYSTEM SHALL split the text on runs of whitespace and treat each resulting non-empty run as exactly one token, no matter which hyphens, apostrophes, digits or punctuation marks it contains
+
+Requirement 2: Significance
+  THE SYSTEM SHALL retain a token only when that token is three or more characters long, counting every character in the token including hyphens, apostrophes, digits and punctuation marks
+
+Requirement 3: Result
+  THE SYSTEM SHALL return how many tokens were retained
+  IF no tokens were retained THEN the system SHALL return 0

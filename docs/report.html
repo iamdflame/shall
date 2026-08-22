@@ -1,0 +1,569 @@
+<title>Ambiguity Is a Compile Error</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,500;0,600;1,300&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    /* Light: drafting paper. Cool, blue-biased — not a warm cream. */
+    --ground:   #E8EAEF;
+    --panel:    #DFE2E9;
+    --ink:      #14171E;
+    --muted:    #5C6474;
+    --rule:     rgba(20, 23, 30, 0.14);
+    --accord:   #12866A;
+    --discord:  #C2381A;
+    --shadow:   rgba(20, 23, 30, 0.10);
+
+    --serif: 'Spectral', ui-serif, Georgia, 'Times New Roman', serif;
+    --mono:  'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --measure: 62ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:  #0E1116;
+      --panel:   #151922;
+      --ink:     #E4E7ED;
+      --muted:   #79808F;
+      --rule:    rgba(228, 231, 237, 0.11);
+      --accord:  #5FD3B0;
+      --discord: #FF6B4A;
+      --shadow:  rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:  #0E1116;
+    --panel:   #151922;
+    --ink:     #E4E7ED;
+    --muted:   #79808F;
+    --rule:    rgba(228, 231, 237, 0.11);
+    --accord:  #5FD3B0;
+    --discord: #FF6B4A;
+    --shadow:  rgba(0, 0, 0, 0.5);
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 40px 140px; }
+  @media (max-width: 700px) { .wrap { padding: 0 20px 90px; } }
+
+  /* ── masthead ─────────────────────────────────────────────── */
+
+  .masthead {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 24px; flex-wrap: wrap;
+    padding: 40px 0 0;
+  }
+  .wordmark {
+    font-family: var(--mono); font-weight: 600; font-size: 13px;
+    letter-spacing: 0.42em; text-transform: uppercase;
+  }
+  .runline {
+    font-size: 11px; color: var(--muted); letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── thesis ───────────────────────────────────────────────── */
+
+  .thesis { padding: 86px 0 20px; }
+  .eyebrow {
+    font-size: 10.5px; letter-spacing: 0.34em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 30px;
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 300;
+    font-size: clamp(2.6rem, 7.2vw, 5.4rem);
+    line-height: 1.02; letter-spacing: -0.022em;
+    margin: 0; text-wrap: balance; max-width: 16ch;
+  }
+  h1 em { font-style: italic; font-weight: 500; }
+  .standfirst {
+    font-family: var(--serif); font-size: clamp(1.05rem, 2vw, 1.3rem);
+    font-weight: 300; line-height: 1.55; color: var(--muted);
+    max-width: 48ch; margin: 34px 0 0;
+  }
+
+  /* ── the fracture ─────────────────────────────────────────── */
+
+  .fracture { margin: 96px 0 0; }
+
+  .clause-frame {
+    border-top: 1px solid var(--rule);
+    padding-top: 30px;
+  }
+  .clause-meta {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    font-size: 11px; color: var(--muted); letter-spacing: 0.05em;
+    margin-bottom: 22px;
+  }
+  .clause {
+    font-family: var(--serif); font-weight: 300;
+    font-size: clamp(1.35rem, 3.5vw, 2.35rem);
+    line-height: 1.35; letter-spacing: -0.012em;
+    margin: 0; text-wrap: balance;
+  }
+  .kw { font-variant: small-caps; font-weight: 500; letter-spacing: 0.06em; }
+  .undefined {
+    position: relative; color: var(--discord); font-weight: 500;
+    white-space: nowrap;
+  }
+  .undefined::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -0.14em;
+    height: 2px; background: var(--discord);
+  }
+  .verdict {
+    margin: 26px 0 0; font-size: 12.5px; color: var(--discord);
+    letter-spacing: 0.02em; max-width: var(--measure);
+  }
+
+  /* the braid */
+  .braid { width: 100%; height: 132px; display: block; margin: 6px 0 0; overflow: visible; }
+  .braid path {
+    fill: none; stroke-width: 1.5; stroke-linecap: round;
+    stroke-dasharray: 420; stroke-dashoffset: 420;
+    animation: draw 1.35s cubic-bezier(0.22, 0.75, 0.2, 1) forwards;
+  }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .braid path { animation: none; stroke-dashoffset: 0; }
+  }
+
+  /* ── readings ─────────────────────────────────────────────── */
+
+  .readings {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  }
+  @media (max-width: 640px) { .readings { grid-template-columns: 1fr; } }
+
+  .reading { background: var(--ground); padding: 26px 24px 24px; }
+  .reading .answer {
+    font-family: var(--serif); font-size: 3.4rem; font-weight: 500;
+    line-height: 1; color: var(--discord); font-variant-numeric: tabular-nums;
+  }
+  .reading .gloss {
+    font-family: var(--serif); font-style: italic; font-weight: 300;
+    font-size: 1rem; color: var(--ink); margin: 12px 0 18px; opacity: 0.85;
+  }
+  .reading .who {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .chip {
+    font-size: 10.5px; letter-spacing: 0.04em; color: var(--muted);
+    border: 1px solid var(--rule); padding: 3px 8px;
+  }
+
+  /* ── witness table ────────────────────────────────────────── */
+
+  .section { margin: 120px 0 0; }
+  h2 {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.34em; text-transform: uppercase; color: var(--muted);
+    margin: 0 0 8px;
+  }
+  .section-note {
+    font-family: var(--serif); font-weight: 300; font-size: 1.05rem;
+    color: var(--muted); max-width: var(--measure); margin: 0 0 34px;
+  }
+
+  .scroller { overflow-x: auto; border: 1px solid var(--rule); }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th, td {
+    text-align: left; padding: 13px 18px; font-size: 12.5px;
+    border-bottom: 1px solid var(--rule); vertical-align: top;
+  }
+  thead th {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.input { color: var(--ink); white-space: nowrap; }
+  td.split { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .val { color: var(--discord); font-weight: 600; }
+  .vs { color: var(--muted); padding: 0 8px; }
+  td.why { color: var(--muted); font-family: var(--serif); font-style: italic; font-size: 13.5px; }
+
+  /* ── mechanism ────────────────────────────────────────────── */
+
+  .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .step {
+    background: var(--ground); padding: 24px 26px;
+    display: grid; grid-template-columns: 3.2rem 1fr; gap: 22px; align-items: start;
+  }
+  @media (max-width: 640px) { .step { grid-template-columns: 1fr; gap: 8px; } }
+  .step .ord {
+    font-family: var(--serif); font-size: 1.5rem; font-weight: 500;
+    color: var(--muted); line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .step h3 {
+    margin: 0 0 7px; font-family: var(--mono); font-size: 12.5px;
+    font-weight: 600; letter-spacing: 0.05em;
+  }
+  .step p {
+    margin: 0; color: var(--muted); font-family: var(--serif);
+    font-weight: 300; font-size: 1rem; line-height: 1.6; max-width: var(--measure);
+  }
+
+  /* ── resolution ───────────────────────────────────────────── */
+
+  .resolved {
+    border: 1px solid var(--rule); border-left: 2px solid var(--accord);
+    padding: 32px 30px; background: var(--panel);
+  }
+  .resolved .clause { font-size: clamp(1.05rem, 2.2vw, 1.35rem); }
+  .resolved .named { color: var(--accord); font-weight: 500; }
+  .accord-line {
+    margin: 24px 0 0; color: var(--accord); font-size: 12.5px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .accord-rule { flex: 1; height: 1px; background: var(--accord); opacity: 0.4; min-width: 40px; }
+
+  /* ── terminal ─────────────────────────────────────────────── */
+
+  pre.term {
+    margin: 0; padding: 26px 24px; background: var(--panel);
+    border: 1px solid var(--rule); overflow-x: auto;
+    font-family: var(--mono); font-size: 12px; line-height: 1.75;
+    color: var(--ink);
+  }
+  pre.term .c-dim { color: var(--muted); }
+  pre.term .c-bad { color: var(--discord); }
+  pre.term .c-good { color: var(--accord); }
+
+  /* ── footer ───────────────────────────────────────────────── */
+
+  footer {
+    margin: 130px 0 0; padding-top: 26px; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    font-size: 11px; color: var(--muted); letter-spacing: 0.05em;
+  }
+  .stats { display: flex; gap: 26px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+  .stats b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="wordmark">shall</div>
+    <div class="runline">6 readers &middot; gpt-4o &rarr; gpt-5.6 &middot; 25/25 self-verified</div>
+  </header>
+
+  <section class="thesis">
+    <div class="eyebrow">A language whose source code is English</div>
+    <h1>Ambiguity is a <em>compile error</em>.</h1>
+    <p class="standfirst">
+      Six independent language models were handed the same specification and asked
+      to implement it. Nothing else. They returned three different programs — and
+      the disagreement between them is not noise to be averaged away. It is the
+      measurement.
+    </p>
+  </section>
+
+  <section class="fracture">
+    <div class="clause-frame">
+      <div class="clause-meta">
+        <span>examples/word-count.shall:10</span>
+        <span>criterion 1.1</span>
+      </div>
+
+      <p class="clause">
+        <span class="kw">The system</span> <span class="kw">shall</span>
+        count the <span class="undefined">words</span> in the text
+      </p>
+
+      <p class="verdict">
+        A “word” is undefined until the specification states how text is split.
+        Hyphens, apostrophes and digits are conventions, not rules.
+      </p>
+    </div>
+
+    <svg class="braid" viewBox="0 0 1000 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M 128 0 C 128 46, 128 52, 250 96 L 250 132" stroke="var(--discord)" style="animation-delay:.05s"></path>
+      <path d="M 128 0 C 128 46, 128 52, 750 96 L 750 132" stroke="var(--discord)" style="animation-delay:.13s"></path>
+      <path d="M 128 0 C 128 40, 128 60, 190 108 L 190 132" stroke="var(--rule)" style="animation-delay:.2s"></path>
+      <path d="M 128 0 C 128 40, 128 60, 310 108 L 310 132" stroke="var(--rule)" style="animation-delay:.26s"></path>
+      <path d="M 128 0 C 128 40, 128 60, 690 108 L 690 132" stroke="var(--rule)" style="animation-delay:.32s"></path>
+      <path d="M 128 0 C 128 40, 128 60, 810 108 L 810 132" stroke="var(--rule)" style="animation-delay:.38s"></path>
+    </svg>
+
+    <div class="readings">
+      <article class="reading">
+        <div class="answer">5</div>
+        <p class="gloss">A hyphen separates words.</p>
+        <div class="who">
+          <span class="chip">gpt-4.1</span>
+          <span class="chip">o4-mini</span>
+          <span class="chip">gpt-5.2</span>
+          <span class="chip">gpt-5.6-terra</span>
+        </div>
+      </article>
+      <article class="reading">
+        <div class="answer">2</div>
+        <p class="gloss">A hyphenated compound is one word.</p>
+        <div class="who">
+          <span class="chip">gpt-4o</span>
+          <span class="chip">gpt-5.6-luna</span>
+        </div>
+      </article>
+    </div>
+
+    <p class="section-note" style="margin-top:22px;">
+      Input: <code>"well-known state-of-the-art"</code>. Both readings are defensible.
+      Neither is wrong. The specification simply never said.
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>Seven witnesses</h2>
+    <p class="section-note">
+      Every disagreement is anchored to a concrete input the readers were run against —
+      not an opinion about the prose, but an observation of behaviour.
+    </p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Input</th><th>Readings</th><th>What was never stated</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="input">"well-known state-of-the-art"</td>
+            <td class="split"><span class="val">5</span><span class="vs">vs</span><span class="val">2</span></td>
+            <td class="why">whether a hyphen separates words</td>
+          </tr>
+          <tr>
+            <td class="input">"it's don't o'clock"</td>
+            <td class="split"><span class="val">2</span><span class="vs">vs</span><span class="val">3</span></td>
+            <td class="why">whether an apostrophe splits a token</td>
+          </tr>
+          <tr>
+            <td class="input">"a1 22 333 4444"</td>
+            <td class="split"><span class="val">0</span><span class="vs">vs</span><span class="val">2</span></td>
+            <td class="why">whether digits can be words</td>
+          </tr>
+          <tr>
+            <td class="input">"one,two;three"</td>
+            <td class="split"><span class="val">3</span><span class="vs">vs</span><span class="val">1</span></td>
+            <td class="why">whether punctuation separates words</td>
+          </tr>
+          <tr>
+            <td class="input">"ß Ünïcode naïve"</td>
+            <td class="split"><span class="val">1</span><span class="vs">vs</span><span class="val">2</span></td>
+            <td class="why">whether accented characters count as letters</td>
+          </tr>
+          <tr>
+            <td class="input">"a-b"</td>
+            <td class="split"><span class="val">0</span><span class="vs">vs</span><span class="val">1</span></td>
+            <td class="why">whether a hyphen splits before the length is measured</td>
+          </tr>
+          <tr>
+            <td class="input">"..."</td>
+            <td class="split"><span class="val">0</span><span class="vs">vs</span><span class="val">1</span></td>
+            <td class="why">whether a run of punctuation is a three-letter word</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>A second kind, that no lint can see</h2>
+    <p class="section-note">
+      The first failure was one undefined noun, and a static scan finds those.
+      This one is different: every sentence is precise on its own, and the
+      ambiguity lives in how two of them combine. The lint reports nothing here.
+      Only running the readers finds it.
+    </p>
+
+    <div class="clause-frame" style="border-top:none;padding-top:0;">
+      <p class="clause">
+        <span class="kw">If</span> three or more dice show the same face
+        <span class="kw">then</span> <span class="kw">the system</span>
+        <span class="kw">shall</span> score that face &times; 100
+      </p>
+      <p class="clause" style="margin-top:16px;">
+        <span class="kw">The system</span> <span class="kw">shall</span> score each
+        <span class="undefined">remaining</span> die showing one as fifty points
+      </p>
+      <p class="verdict">
+        Are the three dice that formed the set still &ldquo;remaining&rdquo;? Nothing says.
+      </p>
+    </div>
+
+    <div class="readings" style="margin-top:36px;">
+      <article class="reading">
+        <div class="answer">100</div>
+        <p class="gloss">The set consumes its dice.</p>
+        <div class="who">
+          <span class="chip">gpt-4o</span><span class="chip">gpt-4.1</span>
+          <span class="chip">o4-mini</span><span class="chip">gpt-5.2</span>
+          <span class="chip">gpt-5.6-terra</span>
+        </div>
+      </article>
+      <article class="reading">
+        <div class="answer">250</div>
+        <p class="gloss">The set scores, and its dice score again as singles.</p>
+        <div class="who"><span class="chip">gpt-5.6-luna</span></div>
+      </article>
+    </div>
+
+    <p class="section-note" style="margin-top:22px;">
+      Input: <code>dice = [1,1,1,2,2]</code>. A scoring rule that reads perfectly,
+      and a 150-point disagreement hiding between two clauses.
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>How the error is found</h2>
+    <p class="section-note">
+      Nothing here asks a model whether a sentence is ambiguous. Asking would return
+      an opinion. Running returns evidence.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="ord">1</div>
+        <div>
+          <h3>Every reader gets the identical question</h3>
+          <p>Byte-identical instructions, byte-identical specification, no knowledge that
+          other readers exist. A reader that knew it was being compared would hedge toward
+          the obvious interpretation — which is the exact bias being measured.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="ord">2</div>
+        <div>
+          <h3>Readers span generations, not sizes</h3>
+          <p>An earlier roster of five same-generation variants passed a specification a
+          human would have questioned: every member resolved it by the same shared
+          convention. One even wrote a comment noting the ambiguity before silently
+          picking a side. Training lineage is closer to independence than parameter count.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="ord">3</div>
+        <div>
+          <h3>Behaviour is compared, never source code</h3>
+          <p>Two correct implementations of one requirement often share no lines at all.
+          Each candidate is executed against every probe in an isolated sandbox, and its
+          results concatenate into a behaviour vector. Identical vectors are the same
+          program, whatever the code looks like.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="ord">4</div>
+        <div>
+          <h3>A split is an error, even with a majority</h3>
+          <p>Four readers against two does not resolve anything. A plurality is evidence
+          about which interpretation is more popular — which is precisely the question a
+          specification exists to settle.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Agreement is not correctness</h2>
+    <p class="section-note">
+      Readers can agree on a program the specification never asked for, and a
+      consensus check alone would call that a clean build. So a second pass turns
+      each clause back into test cases and runs the built program against them.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="ord">&there4;</div>
+        <div>
+          <h3>The expectations are themselves filtered by consensus</h3>
+          <p>A model asked what a clause requires can be as wrong as one asked to
+          implement it. Several readers propose expectations independently, and only
+          the ones they agree on are kept. A case they cannot agree about is not
+          evidence about the program &mdash; it is more evidence about the prose, and
+          it is reported as disputed rather than quietly dropped.</p>
+        </div>
+      </div>
+    </div>
+
+    <pre class="term" style="margin-top:1px;">  <span style="font-weight:600">CONFORMANCE</span>  <span class="c-good">100%</span>  <span class="c-dim">11/11 derived cases hold</span>
+
+    <span class="c-good">+</span> 1.1   THE SYSTEM SHALL split the text on runs of whitespace&hellip;
+    <span class="c-good">+</span> 2.1   THE SYSTEM SHALL retain a token only when that token is&hellip;
+    <span class="c-good">+</span> 3.1   THE SYSTEM SHALL return how many tokens were retained
+    <span class="c-good">+</span> 3.2   IF no tokens were retained THEN the system SHALL return 0</pre>
+  </section>
+
+  <section class="section">
+    <h2>The fix is a sentence</h2>
+    <p class="section-note">
+      The compiler does not repair the code. It names the words that failed, and
+      the author writes better ones.
+    </p>
+
+    <div class="resolved">
+      <p class="clause">
+        <span class="kw">The system</span> <span class="kw">shall</span> split the text on
+        <span class="named">runs of whitespace</span> and treat each resulting non-empty run
+        as <span class="named">exactly one token</span>, no matter which hyphens, apostrophes,
+        digits or punctuation marks it contains
+      </p>
+      <div class="accord-line">
+        <span>6 readers &middot; 33 probes &middot; one behaviour</span>
+        <span class="accord-rule"></span>
+        <span>compiled</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>At the terminal</h2>
+    <p class="section-note">Verbatim output from the run this page documents.</p>
+    <pre class="term"><span class="c-dim">$</span> shall check examples/word-count.shall
+
+<span class="c-bad">AMBIGUOUS SPECIFICATION</span>  WordCount
+<span class="c-dim">──────────────────────────────────────────────────────────</span>
+  the ensemble split into 3 distinct behaviours across 7 probe(s).
+  <span class="c-dim">6 readers, 23 probes, 7 disagreements</span>
+
+  <span class="c-dim">examples/word-count.shall:10</span>
+
+   <span class="c-dim">│</span>  THE SYSTEM SHALL count the words in the text
+   <span class="c-dim">│</span>                             <span class="c-bad">~~~~~</span>
+   <span class="c-dim">└─</span> <span class="c-bad">a "word" is undefined until the specification states how
+      text is split - hyphens, apostrophes and digits are all
+      conventions</span>
+
+   <span style="font-weight:600">WITNESS</span>  text = "well-known state-of-the-art"
+
+     <span style="font-weight:600">5</span>   <span class="c-dim">gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra</span>
+     <span style="font-weight:600">2</span>   <span class="c-dim">gpt-4o, gpt-5.6-luna</span>
+
+<span class="c-dim">$</span> echo $?
+<span class="c-bad">1</span></pre>
+  </section>
+
+  <footer>
+    <div class="stats">
+      <span><b>6</b> readers</span>
+      <span><b>104</b> tests</span>
+      <span><b>25/25</b> criteria self-verified</span>
+      <span><b>1</b> runtime dependency</span>
+    </div>
+    <div>every figure on this page is from a real run</div>
+  </footer>
+
+</div>

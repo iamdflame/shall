@@ -1,0 +1,22 @@
+program OrderTotal
+
+Computes what a customer pays for a basket, given a subtotal and a coupon.
+
+interface
+  input  subtotal: number
+  input  couponPercent: integer
+  output total: number
+
+Requirement 1: Coupon
+  WHEN a coupon percentage is supplied THEN the system SHALL reduce the subtotal by that percentage
+  IF the coupon percentage exceeds 100 THEN the system SHALL treat it as 100
+  IF the coupon percentage is below 0 THEN the system SHALL treat it as 0
+
+Requirement 2: Shipping
+  IF the order is below 50 THEN the system SHALL add a shipping fee of 6
+
+Requirement 3: Tax
+  THE SYSTEM SHALL add sales tax of 8 percent
+
+Requirement 4: Presentation
+  THE SYSTEM SHALL round the total to two decimal places

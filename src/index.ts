@@ -1,0 +1,15 @@
+export { parseShall, hasFatal } from './shall/lang/parser.js';
+export { compileEnsemble } from './shall/compile/compiler.js';
+export { structuralProbes, parseGeneratedProbes } from './shall/oracle/probes.js';
+export { runDifferential, buildVerdict } from './shall/oracle/differential.js';
+export { loadCandidate, canonical, canonicalValue } from './shall/execute/sandbox.js';
+export { attribute, lintVagueness } from './shall/attribute/attribute.js';
+export { deriveExpectations } from './shall/conform/expectations.js';
+export { checkConformance, conformanceBlocks } from './shall/conform/check.js';
+export { loadShallConfig, DEFAULT_ENSEMBLE } from './shall/config.js';
+export { parseEars, describe } from './ears/parser.js';
+export type { Program, ShallType, Interface } from './shall/lang/types.js';
+export type { Probe } from './shall/oracle/probes.js';
+export type { OracleResult, Divergence } from './shall/oracle/differential.js';
+export type { ConformanceReport } from './shall/conform/check.js';
+export type { Provider, CompilerModel } from './shall/provider/types.js';

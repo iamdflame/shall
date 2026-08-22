@@ -7,6 +7,8 @@
 
 **A language whose source code is English.**
 
+**[shall-david-praises-projects.vercel.app](https://shall-david-praises-projects.vercel.app)** · **[Demo video](https://youtu.be/peMdu3rn8Yc)**
+
 *When independent readers disagree about what your specification means,
 that is a compile error — and it points at the sentence.*
 
@@ -459,6 +461,20 @@ tests/         145 tests, TAP
 
 [`PROVENANCE.md`](PROVENANCE.md) records honestly how this repository was built,
 including that the first commit contained the whole initial project.
+
+## The site
+
+[`site/`](site/) is the project page — a static build with no framework and no
+bundler, deployed to Vercel. Its witness explorer is driven by
+[`site/data.json`](site/data.json), which is generated from the committed
+recordings, so the disagreements a visitor clicks through are the same
+measurements this repository ships rather than a mock-up.
+
+```bash
+npm run site        # serve it locally on :8899
+npm run site:data   # regenerate data.json from the recordings
+npm run site:deploy # vercel --prod
+```
 
 ## Brand assets
 

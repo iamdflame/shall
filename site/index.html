@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHALL — a language whose source code is English</title>
+<meta name="description" content="Six AI models read the same two-sentence specification and wrote three different programs. SHALL turns that disagreement into a compile error, pointing at the sentence responsible.">
+
+<meta property="og:title" content="SHALL — a language whose source code is English">
+<meta property="og:description" content="When independent readers disagree about what your specification means, that is a compile error.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:ital,wght@0,300;0,500;1,300;1,500&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="SHALL, home">
+      <svg viewBox="0 0 64 64" width="26" height="26" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" aria-hidden="true">
+        <path d="M 8 20 H 56"/><path d="M 10 40 q 7 -13 14 0 t 14 0 t 12 0"/>
+      </svg>
+      <b>SHALL</b>
+    </a>
+    <div class="navlinks">
+      <a href="#witness" class="hide-sm">Evidence</a>
+      <a href="#how" class="hide-sm">How</a>
+      <a href="#findings" class="hide-sm">Findings</a>
+      <a href="#start">Start</a>
+      <a href="https://github.com/iamdflame/shall" class="ghbtn" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+
+<!-- ─── hero ──────────────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">A language whose source code is English</div>
+
+    <div class="stage" id="stage">
+      <p class="sentence" id="sentence"></p>
+      <div class="shards" id="shards" aria-hidden="true"></div>
+    </div>
+
+    <h1>Ambiguity is a <em>compile error</em>.</h1>
+
+    <p class="lede">
+      Six models were handed that specification and asked to implement it. Nothing
+      else — no examples, no hints, and no knowledge that the others existed. They
+      returned three behaviourally different programs, because nobody wrote down
+      whether a hyphen separates words.
+    </p>
+
+    <div class="cta">
+      <a class="btn primary" href="#witness">
+        See the disagreement
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 8h8M9 4l4 4-4 4"/></svg>
+      </a>
+      <a class="btn ghost" href="https://github.com/iamdflame/shall" rel="noopener">Read the code</a>
+      <a class="btn ghost" href="#video">Watch the demo</a>
+    </div>
+
+    <div class="runstrip">
+      <span><b id="s-readers">6</b> independent readers</span>
+      <span><b id="s-tests">148</b> tests</span>
+      <span><b id="s-criteria">50</b>/50 criteria verified</span>
+      <span><b id="s-recordings">47</b> recorded runs</span>
+      <span><b>1</b> runtime dependency</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── witness explorer ──────────────────────────────────────────────── -->
+<section id="witness">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>The evidence</h2>
+      <p class="sec-title">Every disagreement comes with the input that proves it.</p>
+      <p class="sec-note">
+        These are real outputs from a recorded run, committed to the repository.
+        Pick an input and see what each reader actually returned. The witnesses are
+        shrunk first — <code>"a-a"</code> proves the point and leaves nothing else
+        in the input to blame.
+      </p>
+    </div>
+
+    <div class="explorer reveal">
+      <div class="exp-top">
+        <div class="inputs" id="inputs" role="tablist" aria-label="Witness inputs"></div>
+        <div class="readout">
+          <div class="q" id="question">what each reader returns</div>
+          <div class="groups" id="groups"></div>
+        </div>
+      </div>
+      <div class="exp-foot">
+        <span id="foot-note">Recorded 2026-08-22 · gpt-4o through gpt-5.6</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── the fix ───────────────────────────────────────────────────────── -->
+<section id="fix">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>The fix</h2>
+      <p class="sec-title">One sentence, rewritten, and it compiles.</p>
+      <p class="sec-note">
+        SHALL does not repair your code. It names the words that failed and you
+        write better ones — then the same six readers agree on every probe.
+      </p>
+    </div>
+
+    <div class="split2 reveal">
+      <div class="pane">
+        <div class="pane-head"><span>word-count.shall</span><span class="state bad">3 behaviours</span></div>
+<pre><span class="c">Requirement 1: Words</span>
+  <span class="k">THE SYSTEM SHALL</span> count the <span class="bad em">words</span> in the text
+                            <span class="bad">~~~~~</span>
+
+<span class="c">a "word" is undefined until the
+specification states how text is split</span></pre>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>word-count.fixed.shall</span><span class="state good">1 behaviour</span></div>
+<pre><span class="c">Requirement 1: Tokenisation</span>
+  <span class="k">THE SYSTEM SHALL</span> <span class="good em">split the text on runs
+  of whitespace</span> and treat each resulting
+  non-empty run as <span class="good em">exactly one token</span>,
+  no matter which hyphens, apostrophes,
+  digits or punctuation it contains</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── how it works ──────────────────────────────────────────────────── -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>How</h2>
+      <p class="sec-title">Nothing here asks a model whether a sentence is ambiguous.</p>
+      <p class="sec-note">
+        Asking returns an opinion, confidently, whether or not the prose is actually
+        underdetermined — and it cannot show you. Running returns a fact with a
+        witness attached.
+      </p>
+    </div>
+
+    <div class="steps reveal">
+      <div class="step">
+        <div class="n">1</div>
+        <div>
+          <h3>Every reader gets an identical question</h3>
+          <p>Byte-identical instructions, byte-identical specification, and no knowledge
+          that other readers exist. A reader that knew it was being compared would hedge
+          toward the obvious interpretation — the exact bias being measured.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <div>
+          <h3>Readers span generations, not sizes</h3>
+          <p>An earlier roster of five same-generation variants passed a specification a
+          human would question: every member resolved it by the same shared convention,
+          and two wrote comments showing they had noticed. Training lineage is closer to
+          independence than parameter count.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <div>
+          <h3>Behaviour is compared, never source code</h3>
+          <p>Two correct implementations of one requirement routinely share no lines at
+          all. Each candidate runs against every probe in an isolated sandbox, and its
+          results concatenate into a behaviour vector. Identical vectors are the same
+          program, whatever the code looks like.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">4</div>
+        <div>
+          <h3>A split is an error, even with a majority</h3>
+          <p>Four readers against two does not settle anything. A plurality is evidence
+          about which interpretation is more popular, which is precisely the question a
+          specification exists to answer.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">5</div>
+        <div>
+          <h3>Then the agreed program is checked against each clause</h3>
+          <p>Consensus is not correctness — readers can agree on behaviour nobody asked
+          for. Each clause is turned back into test cases and the build is run against
+          them, with the expectations themselves filtered by agreement.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── findings ──────────────────────────────────────────────────────── -->
+<section id="findings">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Findings</h2>
+      <p class="sec-title">Four results, each one re-runnable in ten seconds.</p>
+      <p class="sec-note">
+        A finding stated in a README is an anecdote. <code>npm run findings</code>
+        reproduces all four from the committed recordings, with no API key and no
+        spending — and fails if any of them stops being true.
+      </p>
+    </div>
+
+    <div class="finds reveal">
+      <article class="find">
+        <div class="no">Finding 01</div>
+        <h3>An ensemble of one family shares its blind spots</h3>
+        <p>Five same-generation readers called a specification unanimous — while two of
+        them wrote comments in their own generated code showing they had noticed the
+        ambiguity and quietly picked a side.</p>
+      </article>
+      <article class="find">
+        <div class="no">Finding 02</div>
+        <h3>Human intuition about ambiguity is unreliable</h3>
+        <p>A clause humans read two ways was unanimous across six model generations at
+        5,000 probes. A mundane one — “count the words” — split them at 23.</p>
+      </article>
+      <article class="find">
+        <div class="no">Finding 03</div>
+        <h3>Some disagreement is arithmetic, not English</h3>
+        <p>Two orderings of the same multiplication differ by one unit in the last place.
+        Reporting that as ambiguity sends an author to edit a sentence that was already
+        correct, so it is classified separately.</p>
+      </article>
+      <article class="find">
+        <div class="no">Finding 04</div>
+        <h3>Ambiguity hides between precise sentences</h3>
+        <p>A dice-scoring specification the static lint finds nothing wrong with still
+        splits the readers, because two clauses never say which one applies first.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ─── video ─────────────────────────────────────────────────────────── -->
+<section id="video">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Demo</h2>
+      <p class="sec-title">Three minutes, start to finish.</p>
+    </div>
+    <div class="video reveal">
+      <iframe
+        src="https://www.youtube-nocookie.com/embed/peMdu3rn8Yc"
+        title="SHALL — six AI models read one spec and wrote three programs"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen loading="lazy"></iframe>
+    </div>
+  </div>
+</section>
+
+<!-- ─── start ─────────────────────────────────────────────────────────── -->
+<section id="start">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Start</h2>
+      <p class="sec-title">Reproduce all of it without an API key.</p>
+      <p class="sec-note">
+        Every bundled example ships with its recorded ensemble — the verbatim output of
+        a real run, committed and stamped with its date. Replaying costs nothing and
+        reproduces exactly what is on this page.
+      </p>
+    </div>
+
+    <div class="term reveal">
+      <div class="term-bar">
+        <i class="dot3"></i><i class="dot3"></i><i class="dot3"></i>
+        <span>bash</span>
+        <button class="copy" id="copy" type="button">Copy</button>
+      </div>
+<pre id="cmds"><span class="c">$</span> git clone https://github.com/iamdflame/shall &amp;&amp; cd shall
+<span class="c">$</span> npm install &amp;&amp; npm run build &amp;&amp; npm run install-cli
+
+<span class="c">$</span> shall check examples/word-count.shall   <span class="c"># the disagreement</span>
+<span class="c">$</span> npm run findings                        <span class="c"># all four findings, 15s</span>
+<span class="c">$</span> npm run verify                          <span class="c"># 50/50 criteria</span></pre>
+    </div>
+
+    <div class="cta reveal" style="margin-top:26px">
+      <a class="btn primary" href="https://github.com/iamdflame/shall" rel="noopener">Open the repository</a>
+      <a class="btn ghost" href="https://youtu.be/peMdu3rn8Yc" rel="noopener">Watch on YouTube</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;width:100%">
+    <span>SHALL · requirements are the program</span>
+    <span>
+      <a href="https://github.com/iamdflame/shall" rel="noopener">GitHub</a> ·
+      <a href="https://youtu.be/peMdu3rn8Yc" rel="noopener">Demo</a> ·
+      built with Kiro
+    </span>
+  </div>
+</footer>
+
+<script src="/app.js" type="module"></script>
+</body>
+</html>

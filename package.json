@@ -20,7 +20,10 @@
     "findings": "node scripts/findings.mjs",
     "record": "node dist/shall/cli.js record",
     "install-cli": "bash scripts/install-cli.sh",
-    "kiro": "node scripts/kiro-tree.mjs"
+    "kiro": "node scripts/kiro-tree.mjs",
+    "site": "cd site && python3 -m http.server 8899",
+    "site:data": "node scripts/site-data.mjs",
+    "site:deploy": "cd site && npx vercel deploy --yes --prod"
   },
   "keywords": [
     "spec-driven-development",

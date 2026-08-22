@@ -1,0 +1,265 @@
+{
+ "wordCount": {
+  "name": "WordCount",
+  "path": "examples/word-count.shall",
+  "readers": [
+   "gpt-4o",
+   "gpt-4.1",
+   "o4-mini",
+   "gpt-5.2",
+   "gpt-5.6-luna",
+   "gpt-5.6-terra"
+  ],
+  "probes": 23,
+  "groups": 3,
+  "unanimous": false,
+  "divergences": [
+   {
+    "input": {
+     "text": "a-a"
+    },
+    "original": {
+     "text": "well-known state-of-the-art"
+    },
+    "minimised": true,
+    "label": "does a hyphen split a word?",
+    "readings": [
+     {
+      "value": "0",
+      "readers": [
+       "gpt-4.1",
+       "o4-mini",
+       "gpt-5.2",
+       "gpt-5.6-luna",
+       "gpt-5.6-terra"
+      ]
+     },
+     {
+      "value": "1",
+      "readers": [
+       "gpt-4o"
+      ]
+     }
+    ]
+   },
+   {
+    "input": {
+     "text": "aa'"
+    },
+    "original": {
+     "text": "it's don't o'clock"
+    },
+    "minimised": true,
+    "label": "does an apostrophe split a token?",
+    "readings": [
+     {
+      "value": "0",
+      "readers": [
+       "gpt-4.1",
+       "o4-mini",
+       "gpt-5.2",
+       "gpt-5.6-luna",
+       "gpt-5.6-terra"
+      ]
+     },
+     {
+      "value": "1",
+      "readers": [
+       "gpt-4o"
+      ]
+     }
+    ]
+   },
+   {
+    "input": {
+     "text": "aa4"
+    },
+    "original": {
+     "text": "a1 22 333 4444"
+    },
+    "minimised": true,
+    "label": "can digits be words?",
+    "readings": [
+     {
+      "value": "0",
+      "readers": [
+       "gpt-4.1",
+       "o4-mini",
+       "gpt-5.2",
+       "gpt-5.6-luna",
+       "gpt-5.6-terra"
+      ]
+     },
+     {
+      "value": "1",
+      "readers": [
+       "gpt-4o"
+      ]
+     }
+    ]
+   },
+   {
+    "input": {
+     "text": "a,a"
+    },
+    "original": {
+     "text": "one,two;three"
+    },
+    "minimised": true,
+    "label": "does punctuation separate words?",
+    "readings": [
+     {
+      "value": "0",
+      "readers": [
+       "gpt-4.1",
+       "o4-mini",
+       "gpt-5.2",
+       "gpt-5.6-luna",
+       "gpt-5.6-terra"
+      ]
+     },
+     {
+      "value": "1",
+      "readers": [
+       "gpt-4o"
+      ]
+     }
+    ]
+   },
+   {
+    "input": {
+     "text": "ïaa"
+    },
+    "original": {
+     "text": "ß Ünïcode naïve"
+    },
+    "minimised": true,
+    "label": "are accented characters letters?",
+    "readings": [
+     {
+      "value": "0",
+      "readers": [
+       "gpt-4.1",
+       "o4-mini",
+       "gpt-5.2",
+       "gpt-5.6-terra"
+      ]
+     },
+     {
+      "value": "1",
+      "readers": [
+       "gpt-4o",
+       "gpt-5.6-luna"
+      ]
+     }
+    ]
+   },
+   {
+    "input": {
+     "text": "..."
+    },
+    "original": {
+     "text": "..."
+    },
+    "minimised": false,
+    "label": "is punctuation a word?",
+    "readings": [
+     {
+      "value": "0",
+      "readers": [
+       "gpt-4.1",
+       "o4-mini",
+       "gpt-5.2",
+       "gpt-5.6-luna",
+       "gpt-5.6-terra"
+      ]
+     },
+     {
+      "value": "1",
+      "readers": [
+       "gpt-4o"
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "wordCountFixed": {
+  "name": "WordCount",
+  "path": "examples/word-count.fixed.shall",
+  "readers": [
+   "gpt-4o",
+   "gpt-4.1",
+   "o4-mini",
+   "gpt-5.2",
+   "gpt-5.6-luna",
+   "gpt-5.6-terra"
+  ],
+  "probes": 23,
+  "groups": 1,
+  "unanimous": true,
+  "divergences": []
+ },
+ "dice": {
+  "name": "DiceScore",
+  "path": "examples/dice-score.shall",
+  "readers": [
+   "gpt-4o",
+   "gpt-4.1",
+   "o4-mini",
+   "gpt-5.2",
+   "gpt-5.6-luna",
+   "gpt-5.6-terra"
+  ],
+  "probes": 12,
+  "groups": 2,
+  "unanimous": false,
+  "divergences": [
+   {
+    "input": {
+     "dice": [
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    "original": {
+     "dice": [
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    "minimised": false,
+    "label": "edge case",
+    "readings": [
+     {
+      "value": "2000",
+      "readers": [
+       "gpt-4o",
+       "o4-mini",
+       "gpt-5.2",
+       "gpt-5.6-luna",
+       "gpt-5.6-terra"
+      ]
+     },
+     {
+      "value": "0",
+      "readers": [
+       "gpt-4.1"
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "stats": {
+  "tests": 148,
+  "criteria": 50,
+  "recordings": 47
+ }
+}

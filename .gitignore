@@ -5,3 +5,4 @@ keel-report.html
 .DS_Store
 .env
 .shall/
+site/.vercel/

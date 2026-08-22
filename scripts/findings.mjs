@@ -64,6 +64,30 @@ function analyse(path, modelIds, probeCount) {
   return { program, probes, result, sources, verdict: buildVerdict(result, 2) };
 }
 
+/**
+ * Say what is about to happen before doing it.
+ *
+ * Finding 2 executes tens of thousands of sandboxed calls and previously printed
+ * nothing while it did, so a slow machine looked indistinguishable from a hang.
+ * A line that names the work and then reports how long it took is enough.
+ */
+function step(label, fn) {
+  const tty = Boolean(process.stdout.isTTY);
+  // A carriage return only erases on a real terminal. When the output is piped
+  // or captured - which is exactly what happens when someone records it - the
+  // line has to be written once and left alone.
+  if (tty) process.stdout.write(dim(`    … ${label}`));
+  else console.log(dim(`    … ${label}`));
+
+  const started = Date.now();
+  const out = fn();
+  const ms = Date.now() - started;
+
+  if (tty) process.stdout.write(`\r${' '.repeat(label.length + 10)}\r`);
+  if (ms > 1500) console.log(dim(`    (${(ms / 1000).toFixed(1)}s)`));
+  return out;
+}
+
 let failures = 0;
 function check(label, condition, detail) {
   if (condition) {
@@ -75,6 +99,7 @@ function check(label, condition, detail) {
 }
 
 console.log('');
+const SCRIPT_STARTED = Date.now();
 console.log(bold('Reproducing the documented findings'));
 console.log(dim('  from committed recordings — no API key, no spend'));
 const manifest = readManifest(ROOT);
@@ -89,7 +114,8 @@ console.log(dim('  them write comments proving they noticed the ambiguity and pi
 console.log('');
 
 {
-  const { result, sources, verdict } = analyse('examples/order-total.shall', SAME_FAMILY, 96);
+  const { result, sources, verdict } = step('replaying 5 same-family readers', () =>
+    analyse('examples/order-total.shall', SAME_FAMILY, 96));
   check(`5 same-family readers report one behaviour`, result.groups.length === 1,
     `got ${result.groups.length} groups`);
   check('the build is accepted', verdict.ok === true);
@@ -118,12 +144,14 @@ console.log(dim('  six model generations at 5,000 probes. A mundane one ("count 
 console.log('');
 
 {
-  const coupon = analyse('examples/order-total.shall', CROSS_GENERATION, 5000);
+  const coupon = step('running 6 readers against 5,000 probes', () =>
+    analyse('examples/order-total.shall', CROSS_GENERATION, 5000));
   check(`the "ambiguous" coupon spec is unanimous at ${coupon.probes.length} probes`,
     coupon.result.behaviourDivergences.length === 0,
     `${coupon.result.behaviourDivergences.length} disagreements`);
 
-  const words = analyse('examples/word-count.shall', CROSS_GENERATION, 96);
+  const words = step('running 6 readers against the word-count probes', () =>
+    analyse('examples/word-count.shall', CROSS_GENERATION, 96));
   check(`the "obvious" word-count spec splits into ${words.result.groups.length} behaviours`,
     words.result.groups.length > 1, 'no split');
   check('and the split is witnessed by concrete inputs',
@@ -158,10 +186,11 @@ console.log('');
     const p = Math.min(100, Math.max(0, couponPercent)) / 100;
     return subtotal * (1.08 * (1 - p));
   }`;
-  const result = runDifferential(
-    [{ modelId: 'a', label: 'left-assoc', source: A }, { modelId: 'b', label: 'right-assoc', source: B }],
-    { probes, executionTimeoutMs: 1000 },
-  );
+  const result = step('comparing two orderings of the same arithmetic', () =>
+    runDifferential(
+      [{ modelId: 'a', label: 'left-assoc', source: A }, { modelId: 'b', label: 'right-assoc', source: B }],
+      { probes, executionTimeoutMs: 1000 },
+    ));
 
   check('the two orderings differ numerically', result.numericDivergences.length > 0,
     'no float noise produced');
@@ -190,7 +219,8 @@ console.log('');
 
 {
   const { lintVagueness } = await import('../dist/shall/attribute/attribute.js');
-  const { program, result } = analyse('examples/dice-score.shall', CROSS_GENERATION, 96);
+  const { program, result } = step('replaying the dice specification', () =>
+    analyse('examples/dice-score.shall', CROSS_GENERATION, 96));
 
   check('the static lint finds nothing to complain about',
     lintVagueness(program).length === 0,
@@ -212,5 +242,5 @@ if (failures > 0) {
   console.log(`  ${red(`${failures} finding(s) failed to reproduce`)}`);
   process.exit(1);
 }
-console.log(`  ${green('all findings reproduced')} ${dim('— no API key, no spend')}`);
+console.log(`  ${green('all findings reproduced')} ${dim(`— no API key, no spend, ${((Date.now() - SCRIPT_STARTED) / 1000).toFixed(0)}s`)}`);
 console.log('');

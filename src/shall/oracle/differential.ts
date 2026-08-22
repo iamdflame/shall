@@ -22,6 +22,8 @@ export interface CandidateResult {
   source: string;
   /** Present when the candidate could not be loaded; it is then excluded. */
   loadError?: string;
+  /** True when the candidate's answers depended on the order probes ran in. */
+  orderDependent?: boolean;
   outcomes: Outcome[];
   behaviour: string;
 }
@@ -85,7 +87,24 @@ export function runDifferential(
   const candidates: CandidateResult[] = sources.map((s) => {
     try {
       const loaded = loadCandidate(s.source);
-      const outcomes = probes.map((p) => loaded.run(p.input, executionTimeoutMs));
+      const { outcomes, deterministic } = loaded.runSequence(
+        probes.map((p) => p.input),
+        executionTimeoutMs,
+      );
+
+      // A candidate whose answers depend on probe order cannot be compared with
+      // anything, because there is no single behaviour to compare. Excluding it
+      // is honest; averaging over it would not be.
+      if (!deterministic) {
+        return {
+          ...s,
+          loadError: 'candidate is not deterministic: its answers depend on the order probes ran in',
+          orderDependent: true,
+          outcomes: [],
+          behaviour: '',
+        };
+      }
+
       return {
         ...s,
         outcomes,

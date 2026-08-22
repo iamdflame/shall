@@ -18,8 +18,25 @@ export type Outcome =
   | { ok: true; value: unknown }
   | { ok: false; error: string };
 
+export interface SequenceResult {
+  outcomes: Outcome[];
+  /**
+   * False when the candidate's answers depend on the order the probes ran in.
+   *
+   * A candidate that writes to a global carries state between calls, which makes
+   * its behaviour vector a function of probe order and quietly breaks the
+   * invariant the whole oracle rests on. Rather than paying to prevent that on
+   * every call, it is detected: run the sequence forwards and backwards and
+   * compare. A candidate that fails is excluded and reported, which is the same
+   * refuse-to-answer discipline used everywhere else here.
+   */
+  deterministic: boolean;
+}
+
 export interface LoadedCandidate {
   run(input: Record<string, unknown>, timeoutMs: number): Outcome;
+  /** Run many inputs and check the result does not depend on their order. */
+  runSequence(inputs: Record<string, unknown>[], timeoutMs: number): SequenceResult;
 }
 
 export class LoadError extends Error {}
@@ -67,33 +84,48 @@ export function loadCandidate(moduleSource: string): LoadedCandidate {
     throw new LoadError(`candidate failed to load: ${(err as Error).message}`);
   }
 
+  /** One context, one module evaluation, then every input through it. */
+  const pass = (inputs: Record<string, unknown>[], timeoutMs: number): Outcome[] => {
+    const context = createContext(Object.create(null) as object);
+    let fn: unknown;
+    try {
+      fn = script.runInContext(context, { timeout: timeoutMs });
+    } catch (err) {
+      return inputs.map(() => ({ ok: false as const, error: (err as Error).message }));
+    }
+    if (typeof fn !== 'function') {
+      return inputs.map(() => ({ ok: false as const, error: 'candidate did not produce a callable `run`' }));
+    }
+
+    const ctx = context as Record<string, unknown>;
+    ctx.__run = fn;
+    return inputs.map((input) => {
+      try {
+        ctx.__input = structuredClone(input);
+        return { ok: true as const, value: CALL.runInContext(context, { timeout: timeoutMs }) };
+      } catch (err) {
+        return { ok: false as const, error: (err as Error).message || String(err) };
+      }
+    });
+  };
+
   return {
     run(input, timeoutMs) {
-      // A FRESH context per call, not one per candidate.
-      //
-      // Reusing a single context let a candidate carry state between probes - a
-      // memo table, a counter, a lazily-built lookup - which made its behaviour
-      // vector a function of probe *order*. That silently breaks the invariant
-      // the entire oracle rests on: the same input always produces the same
-      // output. The compiler prompt forbids randomness and clocks, but no prompt
-      // can forbid a global, so isolation is enforced structurally rather than
-      // requested politely.
-      const context = createContext(Object.create(null) as object);
-      try {
-        const fn = script.runInContext(context, { timeout: timeoutMs });
-        if (typeof fn !== 'function') {
-          return { ok: false, error: 'candidate did not produce a callable `run`' };
-        }
-        Object.assign(context as Record<string, unknown>, {
-          __run: fn,
-          __input: structuredClone(input),
-        });
-        // @shall shall-language/6.3
-        const value = CALL.runInContext(context, { timeout: timeoutMs });
-        return { ok: true, value };
-      } catch (err) {
-        return { ok: false, error: (err as Error).message || String(err) };
-      }
+      return pass([input], timeoutMs)[0]!;
+    },
+
+    runSequence(inputs, timeoutMs) {
+      const forward = pass(inputs, timeoutMs);
+
+      // The same inputs, in the opposite order, in a brand new context. If any
+      // state survived between calls the two vectors will disagree.
+      const backward = pass(inputs.slice().reverse(), timeoutMs).reverse();
+
+      const deterministic =
+        forward.length === backward.length &&
+        forward.every((o, i) => canonical(o) === canonical(backward[i]!));
+
+      return { outcomes: forward, deterministic };
     },
   };
 }

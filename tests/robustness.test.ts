@@ -19,18 +19,58 @@ test('a candidate cannot carry state between probes', () => {
     'a global written on one probe must not survive into the next');
 });
 
-test('behaviour vectors do not depend on probe order', () => {
-  const source = 'export function run({ subtotal }) { if (typeof seen === "undefined") { seen = 0; } seen++; return subtotal + seen; }';
+test('an order-dependent candidate is detected and excluded, not averaged over', () => {
+  const stateful = 'export function run({ subtotal }) { if (typeof seen === "undefined") { seen = 0; } seen++; return subtotal + seen; }';
+  const pure = 'export function run({ subtotal }) { return subtotal; }';
   const probes = structuralProbes(program, 24);
 
-  const forward = runDifferential([{ modelId: 'a', label: 'a', source }], { probes, executionTimeoutMs: 500 });
-  const reversed = runDifferential([{ modelId: 'a', label: 'a', source }], {
-    probes: probes.slice().reverse(), executionTimeoutMs: 500,
-  });
+  const result = runDifferential(
+    [
+      { modelId: 'a', label: 'stateful', source: stateful },
+      { modelId: 'b', label: 'pure-1', source: pure },
+      { modelId: 'c', label: 'pure-2', source: pure },
+    ],
+    { probes, executionTimeoutMs: 500 },
+  );
 
-  const f = forward.candidates[0].outcomes.map((o) => JSON.stringify(o));
-  const r = reversed.candidates[0].outcomes.slice().reverse().map((o) => JSON.stringify(o));
-  assert.deepEqual(f, r, 'the same probe must give the same answer whenever it runs');
+  const bad = result.candidates.find((c) => c.label === 'stateful')!;
+  assert.equal(bad.orderDependent, true, 'carrying state between probes must be detected');
+  assert.match(bad.loadError ?? '', /depend on the order/);
+  assert.equal(result.loadable.length, 2, 'it must be excluded from comparison entirely');
+
+  // The honest readers still agree, so the build is not derailed by the bad one.
+  assert.equal(result.unanimous, true);
+  assert.equal(buildVerdict(result, 2).ok, true);
+});
+
+test('a deterministic candidate is never flagged as order-dependent', () => {
+  const probes = structuralProbes(program, 40);
+  const source = 'export function run({ subtotal, couponPercent }) { return subtotal - couponPercent; }';
+  const result = runDifferential(
+    [{ modelId: 'a', label: 'a', source }, { modelId: 'b', label: 'b', source }],
+    { probes, executionTimeoutMs: 500 },
+  );
+  assert.equal(result.loadable.length, 2);
+  assert.ok(result.candidates.every((c) => !c.orderDependent));
+});
+
+test('detection survives a candidate that only leaks on a later probe', () => {
+  // Nothing is written until a specific input is seen, so a naive check that
+  // only looked at the first few calls would miss it.
+  const sneaky = `export function run({ subtotal }) {
+    if (subtotal > 90) { globalThis.__tripped = true; }
+    return typeof globalThis.__tripped === 'undefined' ? subtotal : subtotal + 1;
+  }`;
+  const probes = structuralProbes(program, 60);
+  const result = runDifferential(
+    [
+      { modelId: 'a', label: 'sneaky', source: sneaky },
+      { modelId: 'b', label: 'pure', source: 'export function run({ subtotal }) { return subtotal; }' },
+    ],
+    { probes, executionTimeoutMs: 500 },
+  );
+  const bad = result.candidates.find((c) => c.label === 'sneaky')!;
+  assert.equal(bad.orderDependent, true);
 });
 
 test('a candidate mutating its input cannot affect a later probe', () => {

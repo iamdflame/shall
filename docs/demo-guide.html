@@ -577,7 +577,7 @@ Recording quality: High Quality, Medium File Size</pre></li>
     <tr><td class="t">clip-3</td><td>Same output still on screen. Don't type. Just let it sit.</td><td>~20 s</td></tr>
     <tr><td class="t">clip-4</td><td><code>git diff</code> of the fixed file, then <code>shall check examples/word-count.fixed.shall</code>.</td><td>~15 s</td></tr>
     <tr><td class="t">clip-5</td><td><code>npm run kiro</code> then <code>npm run verify</code>.</td><td>~25 s</td></tr>
-    <tr><td class="t">clip-6</td><td><code>npm run findings</code>. Runs about 70 s — you will speed this up later.</td><td>~70 s</td></tr>
+    <tr><td class="t">clip-6</td><td><code>npm run findings</code>. Runs about 15 s and prints progress throughout.</td><td>~15 s</td></tr>
     <tr><td class="t">clip-7</td><td>A plain terminal showing the repo URL, or a simple title card.</td><td>~8 s</td></tr>
   </tbody>
 </table>
@@ -616,12 +616,13 @@ npm run findings</pre>
       <em>Duration</em> → set it to match. A still terminal held longer is fine.</li>
 </ol>
 
-<h3>Speed up the slow bit</h3>
+<h3>Fit clip-6 to its voiceover</h3>
 <p>
-  Clip-6 (<code>npm run findings</code>) runs about 70 seconds and the voiceover is
-  32. Right-click the clip → <strong>Change Speed</strong> → set
-  <strong>300 %</strong>. Then cut the last few seconds so it ends on the green
-  “all findings reproduced” line.
+  Clip-6 (<code>npm run findings</code>) runs about 15 seconds; VO-6 is about 32.
+  So the clip is <em>shorter</em> than the narration, not longer. Right-click it →
+  <strong>Change Speed</strong> → <strong>50 %</strong> to stretch it out, or hold
+  the final frame. Make sure the green “all findings reproduced” line is on screen
+  when the voiceover finishes.
 </p>
 
 <h3>Make it readable</h3>
@@ -675,7 +676,7 @@ npm run findings</pre>
 <footer>
   Every command and duration in this guide was measured on the actual project.
   <code>shall check</code> takes 1.7 s, <code>npm run verify</code> 16 s,
-  <code>npm run findings</code> 67 s.
+  <code>npm run findings</code> 15 s.
 </footer>
 
 </div>

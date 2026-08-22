@@ -179,6 +179,35 @@ console.log('');
 }
 
 console.log('');
+
+/* ── Finding 4 ─────────────────────────────────────────────────────────── */
+
+console.log(bold('  FINDING 4  ') + 'Ambiguity hides between precise sentences, not only inside vague ones');
+console.log(dim('  Every clause of the dice specification is precise on its own. The static lint'));
+console.log(dim('  reports nothing. The readers still split, because two clauses do not say which'));
+console.log(dim('  applies first - and only running them finds it.'));
+console.log('');
+
+{
+  const { lintVagueness } = await import('../dist/shall/attribute/attribute.js');
+  const { program, result } = analyse('examples/dice-score.shall', CROSS_GENERATION, 96);
+
+  check('the static lint finds nothing to complain about',
+    lintVagueness(program).length === 0,
+    `${lintVagueness(program).length} warnings`);
+  check('yet the readers still split', result.groups.length > 1,
+    'no split - the list probes may have regressed');
+
+  const w = result.behaviourDivergences[0];
+  if (w) {
+    console.log(`        ${dim('witness')} ${JSON.stringify(w.probe.input)}`);
+    for (const r of w.readings) {
+      console.log(`        ${bold(String(r.display).padEnd(6))} ${dim(r.members.join(', '))}`);
+    }
+  }
+}
+
+console.log('');
 if (failures > 0) {
   console.log(`  ${red(`${failures} finding(s) failed to reproduce`)}`);
   process.exit(1);

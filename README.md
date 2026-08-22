@@ -101,13 +101,14 @@ One sentence. Ambiguous → unanimous. Both halves replay for free.
 npm run findings     # ten seconds, no API key, no spend
 ```
 
-Three findings, each re-run from the committed recordings rather than asserted:
+Four findings, each re-run from the committed recordings rather than asserted:
 
 | | Finding | Evidence |
 |---|---|---|
 | **1** | An ensemble of one model family shares its blind spots | Five same-generation readers call a spec unanimous — and two of them wrote comments silently resolving the ambiguity |
 | **2** | Human intuition about ambiguity is unreliable | A clause humans read two ways is unanimous at **5,000 probes**; a mundane one splits at 23 |
 | **3** | Some disagreement is arithmetic, not English | Two orderings of the same arithmetic differ by 1 ULP; reporting that as ambiguity blames an innocent clause |
+| **4** | Ambiguity hides *between* precise sentences | A dice-scoring spec the lint finds nothing wrong with still splits the readers, because two clauses never say which applies first |
 
 Finding 1's evidence is the readers' own generated source:
 

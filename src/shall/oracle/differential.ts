@@ -1,4 +1,4 @@
-import { loadCandidate, canonical, display, LoadError, type Outcome } from '../execute/sandbox.js';
+import { loadCandidate, canonical, display, agreement, LoadError, type Outcome } from '../execute/sandbox.js';
 import type { Probe } from './probes.js';
 
 /**
@@ -35,6 +35,14 @@ export interface Divergence {
   probe: Probe;
   /** Distinct observed behaviours on this probe, largest cohort first. */
   readings: { canonical: string; display: string; members: string[] }[];
+  /**
+   * `numeric` when every reading is the same number to within a few ULPs.
+   *
+   * These are arithmetic artefacts, not disagreements about the English, and
+   * they are reported separately so that an author is never sent to edit a
+   * clause that is already correct.
+   */
+  kind: 'behaviour' | 'numeric';
 }
 
 export interface OracleResult {
@@ -47,6 +55,10 @@ export interface OracleResult {
   consensus: BehaviourGroup | null;
   /** True when every loadable candidate agreed on every probe. */
   unanimous: boolean;
+  /** Divergences that are genuine disagreements about the specification. */
+  behaviourDivergences: Divergence[];
+  /** Divergences explained entirely by floating-point arithmetic. */
+  numericDivergences: Divergence[];
 }
 
 export interface RunOptions {
@@ -102,13 +114,30 @@ export function runDifferential(
     }
     if (byReading.size <= 1) continue;
 
+    // If every pair of outcomes here is numerically equivalent, the readers
+    // agree about the behaviour and differ only in arithmetic.
+    const outcomes = loadable.map((c) => c.outcomes[i]!);
+    let numeric = outcomes.length > 1;
+    for (let x = 0; x < outcomes.length && numeric; x++) {
+      for (let y = x + 1; y < outcomes.length; y++) {
+        if (agreement(outcomes[x]!, outcomes[y]!) === 'divergent') {
+          numeric = false;
+          break;
+        }
+      }
+    }
+
     divergences.push({
       probe: probes[i]!,
       readings: [...byReading.entries()]
         .map(([canonicalForm, v]) => ({ canonical: canonicalForm, ...v }))
         .sort((a, b) => b.members.length - a.members.length),
+      kind: numeric ? 'numeric' : 'behaviour',
     });
   }
+
+  const behaviourDivergences = divergences.filter((d) => d.kind === 'behaviour');
+  const numericDivergences = divergences.filter((d) => d.kind === 'numeric');
 
   return {
     probes,
@@ -118,6 +147,8 @@ export function runDifferential(
     divergences,
     consensus: groups[0] ?? null,
     unanimous: groups.length === 1,
+    behaviourDivergences,
+    numericDivergences,
   };
 }
 
@@ -146,11 +177,13 @@ export function buildVerdict(
       reason: `only ${result.loadable.length} candidate(s) loaded; quorum is ${quorum} - ambiguity cannot be ruled out`,
     };
   }
-  if (!result.unanimous) {
+  if (result.behaviourDivergences.length > 0) {
     return {
       ok: false,
-      reason: `the ensemble split into ${result.groups.length} distinct behaviours across ${result.divergences.length} probe(s)`,
+      reason: `the ensemble split into ${result.groups.length} distinct behaviours across ${result.behaviourDivergences.length} probe(s)`,
     };
   }
+  // Only arithmetic separates the readers. That is a warning about the spec's
+  // silence on rounding, not evidence that the English is ambiguous.
   return { ok: true, group: result.consensus! };
 }

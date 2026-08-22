@@ -5,6 +5,7 @@ import type { Program } from '../lang/types.js';
 import type { CompilerModel, Provider } from '../provider/types.js';
 import { ProviderError } from '../provider/types.js';
 import { COMPILER_INSTRUCTIONS, buildCompilerInput, extractModule } from './prompt.js';
+import { readRecording, writeRecording, readManifest, writeManifest } from './recordings.js';
 
 /**
  * The ensemble compiler.
@@ -29,6 +30,8 @@ export interface Candidate {
   label: string;
   source: string;
   cached: boolean;
+  /** True when this came from a committed recording rather than a live call. */
+  recorded?: boolean;
   usage: { input: number; output: number };
   ms: number;
 }
@@ -70,12 +73,21 @@ export interface CompileOptions {
   cacheDir: string;
   /** Ignore cached candidates and recompile every member. */
   noCache?: boolean;
-  onProgress?: (event: { modelId: string; label: string; state: 'start' | 'done' | 'cached' | 'failed' }) => void;
+  /** Repository root, for reading and writing committed recordings. */
+  root?: string;
+  /** Re-ask every reader for real, ignoring recordings. */
+  live?: boolean;
+  /** Write results into `recordings/` so others can replay them for free. */
+  record?: boolean;
+  /** Program name, used to stamp the recording manifest. */
+  programName?: string;
+  onProgress?: (event: { modelId: string; label: string; state: 'start' | 'done' | 'cached' | 'recorded' | 'failed' }) => void;
 }
 
 // @shall 2.1
 export async function compileEnsemble(options: CompileOptions): Promise<CompileResult> {
-  const { program, ensemble, provider, maxOutputTokens, cacheDir, noCache, onProgress } = options;
+  const { program, ensemble, provider, maxOutputTokens, cacheDir, noCache, onProgress,
+          root, live, record, programName } = options;
   mkdirSync(cacheDir, { recursive: true });
 
   const input = buildCompilerInput(program);
@@ -84,6 +96,20 @@ export async function compileEnsemble(options: CompileOptions): Promise<CompileR
     ensemble.map(async (model): Promise<Candidate | CompileFailure> => {
       const key = cacheKey(input, model);
       const cachePath = join(cacheDir, `${key}.js`);
+
+      // Recordings come first. A reader with no API key gets the full result,
+      // and it is the same result the author saw, not an approximation of it.
+      if (!live && root) {
+        const recorded = readRecording(root, key);
+        if (recorded) {
+          onProgress?.({ modelId: model.id, label: model.label, state: 'recorded' });
+          return {
+            modelId: model.id, label: model.label, source: recorded,
+            cached: true, recorded: true,
+            usage: { input: 0, output: 0 }, ms: 0,
+          };
+        }
+      }
 
       // @shall 2.4
       if (!noCache && existsSync(cachePath)) {
@@ -135,6 +161,22 @@ export async function compileEnsemble(options: CompileOptions): Promise<CompileR
 
   const candidates = settled.filter((r): r is Candidate => 'source' in r);
   const failures = settled.filter((r): r is CompileFailure => 'reason' in r);
+
+  if (record && root && candidates.length > 0) {
+    const manifest = readManifest(root);
+    const recordedAt = new Date().toISOString().slice(0, 10);
+    for (const candidate of candidates) {
+      const model = ensemble.find((m) => m.id === candidate.modelId)!;
+      const key = cacheKey(input, model);
+      writeRecording(root, key, candidate.source);
+      manifest.readers[key] = { key, modelId: candidate.modelId, label: candidate.label, recordedAt };
+    }
+    manifest.programs[programName ?? program.name] = {
+      recordedAt,
+      readers: candidates.map((c) => c.label),
+    };
+    writeManifest(root, manifest);
+  }
 
   return {
     candidates,

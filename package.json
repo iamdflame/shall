@@ -16,7 +16,9 @@
     "pretest": "tsc -p tsconfig.json",
     "test": "node --experimental-strip-types --test --test-reporter=tap tests/*.test.ts",
     "shall": "node dist/shall/cli.js",
-    "verify": "node dist/shall/cli.js verify"
+    "verify": "node dist/shall/cli.js verify",
+    "findings": "node scripts/findings.mjs",
+    "record": "node dist/shall/cli.js record"
   },
   "keywords": [
     "spec-driven-development",

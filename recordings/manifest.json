@@ -1,0 +1,365 @@
+{
+  "version": 1,
+  "readers": {
+    "c8777b44c07ba068505ffacd1862e078": {
+      "key": "c8777b44c07ba068505ffacd1862e078",
+      "modelId": "openai:gpt-4o",
+      "label": "gpt-4o",
+      "recordedAt": "2026-08-22"
+    },
+    "bb2f0918969f4bb56eb318e93be54858": {
+      "key": "bb2f0918969f4bb56eb318e93be54858",
+      "modelId": "openai:gpt-4.1",
+      "label": "gpt-4.1",
+      "recordedAt": "2026-08-22"
+    },
+    "677a36be41838ac1a888ace7130ea7ed": {
+      "key": "677a36be41838ac1a888ace7130ea7ed",
+      "modelId": "openai:o4-mini",
+      "label": "o4-mini",
+      "recordedAt": "2026-08-22"
+    },
+    "032bea6530d7335d4c56b514318f544a": {
+      "key": "032bea6530d7335d4c56b514318f544a",
+      "modelId": "openai:gpt-5.2",
+      "label": "gpt-5.2",
+      "recordedAt": "2026-08-22"
+    },
+    "c43c917068524c691891a3c6c9108d09": {
+      "key": "c43c917068524c691891a3c6c9108d09",
+      "modelId": "openai:gpt-5.6-luna",
+      "label": "gpt-5.6-luna",
+      "recordedAt": "2026-08-22"
+    },
+    "6c2001e4cd9c8bc0682c67aa6af16085": {
+      "key": "6c2001e4cd9c8bc0682c67aa6af16085",
+      "modelId": "openai:gpt-5.6-terra",
+      "label": "gpt-5.6-terra",
+      "recordedAt": "2026-08-22"
+    },
+    "b334c71c124a035164d0e7235ed8dc6e": {
+      "key": "b334c71c124a035164d0e7235ed8dc6e",
+      "modelId": "openai:gpt-4o",
+      "label": "gpt-4o",
+      "recordedAt": "2026-08-22"
+    },
+    "aa1de3400aaf73d59c70e49d37ddf5b7": {
+      "key": "aa1de3400aaf73d59c70e49d37ddf5b7",
+      "modelId": "openai:gpt-4.1",
+      "label": "gpt-4.1",
+      "recordedAt": "2026-08-22"
+    },
+    "98399bf20d6ce81d132e91822dc59450": {
+      "key": "98399bf20d6ce81d132e91822dc59450",
+      "modelId": "openai:o4-mini",
+      "label": "o4-mini",
+      "recordedAt": "2026-08-22"
+    },
+    "78e7c7c80a21f5fc3b6f5f78e30dc579": {
+      "key": "78e7c7c80a21f5fc3b6f5f78e30dc579",
+      "modelId": "openai:gpt-5.2",
+      "label": "gpt-5.2",
+      "recordedAt": "2026-08-22"
+    },
+    "aa1b37c9e837bd4cebf810839a5776c0": {
+      "key": "aa1b37c9e837bd4cebf810839a5776c0",
+      "modelId": "openai:gpt-5.6-luna",
+      "label": "gpt-5.6-luna",
+      "recordedAt": "2026-08-22"
+    },
+    "e332a0cdb98ec9dd91219dfe69e7b782": {
+      "key": "e332a0cdb98ec9dd91219dfe69e7b782",
+      "modelId": "openai:gpt-5.6-terra",
+      "label": "gpt-5.6-terra",
+      "recordedAt": "2026-08-22"
+    },
+    "abd13bda2d26672171f62a60079a5ab9": {
+      "key": "abd13bda2d26672171f62a60079a5ab9",
+      "modelId": "openai:gpt-4o",
+      "label": "gpt-4o",
+      "recordedAt": "2026-08-22"
+    },
+    "d4566507cbd0e55c445918ed9c348f18": {
+      "key": "d4566507cbd0e55c445918ed9c348f18",
+      "modelId": "openai:gpt-4.1",
+      "label": "gpt-4.1",
+      "recordedAt": "2026-08-22"
+    },
+    "70122a34b33d2fdf13c8a15f73e33eae": {
+      "key": "70122a34b33d2fdf13c8a15f73e33eae",
+      "modelId": "openai:o4-mini",
+      "label": "o4-mini",
+      "recordedAt": "2026-08-22"
+    },
+    "67b3369178e301198d5f84e50e15bd38": {
+      "key": "67b3369178e301198d5f84e50e15bd38",
+      "modelId": "openai:gpt-5.2",
+      "label": "gpt-5.2",
+      "recordedAt": "2026-08-22"
+    },
+    "38590b1c78bb85cdce868bc0580a9429": {
+      "key": "38590b1c78bb85cdce868bc0580a9429",
+      "modelId": "openai:gpt-5.6-luna",
+      "label": "gpt-5.6-luna",
+      "recordedAt": "2026-08-22"
+    },
+    "7e4a458c05ecd68144a50bdbf787266c": {
+      "key": "7e4a458c05ecd68144a50bdbf787266c",
+      "modelId": "openai:gpt-5.6-terra",
+      "label": "gpt-5.6-terra",
+      "recordedAt": "2026-08-22"
+    },
+    "6cf23838ecea2bcfe6d191a875f51826": {
+      "key": "6cf23838ecea2bcfe6d191a875f51826",
+      "modelId": "openai:gpt-4o",
+      "label": "gpt-4o",
+      "recordedAt": "2026-08-22"
+    },
+    "e13c647ced9e671f3d1c029f91659172": {
+      "key": "e13c647ced9e671f3d1c029f91659172",
+      "modelId": "openai:gpt-4.1",
+      "label": "gpt-4.1",
+      "recordedAt": "2026-08-22"
+    },
+    "078e9d01d5a460cd19d3b71a2fa7732d": {
+      "key": "078e9d01d5a460cd19d3b71a2fa7732d",
+      "modelId": "openai:o4-mini",
+      "label": "o4-mini",
+      "recordedAt": "2026-08-22"
+    },
+    "e72693337971e4495589f1167d31ae24": {
+      "key": "e72693337971e4495589f1167d31ae24",
+      "modelId": "openai:gpt-5.2",
+      "label": "gpt-5.2",
+      "recordedAt": "2026-08-22"
+    },
+    "899768e7b48c597ebf5635a06648671e": {
+      "key": "899768e7b48c597ebf5635a06648671e",
+      "modelId": "openai:gpt-5.6-luna",
+      "label": "gpt-5.6-luna",
+      "recordedAt": "2026-08-22"
+    },
+    "5eb84ecf7933b611ce7023d38cc3c669": {
+      "key": "5eb84ecf7933b611ce7023d38cc3c669",
+      "modelId": "openai:gpt-5.6-terra",
+      "label": "gpt-5.6-terra",
+      "recordedAt": "2026-08-22"
+    },
+    "390b8735ed0f46adec8d6d8979ee973f": {
+      "key": "390b8735ed0f46adec8d6d8979ee973f",
+      "modelId": "openai:gpt-4o",
+      "label": "gpt-4o",
+      "recordedAt": "2026-08-22"
+    },
+    "8c073b0b2cdf9492b4d296bbc6eb73b6": {
+      "key": "8c073b0b2cdf9492b4d296bbc6eb73b6",
+      "modelId": "openai:gpt-4.1",
+      "label": "gpt-4.1",
+      "recordedAt": "2026-08-22"
+    },
+    "29335ca7b58d2824939e9c608de49d05": {
+      "key": "29335ca7b58d2824939e9c608de49d05",
+      "modelId": "openai:o4-mini",
+      "label": "o4-mini",
+      "recordedAt": "2026-08-22"
+    },
+    "b5269b65a26c88eb1faf81ef87c4f707": {
+      "key": "b5269b65a26c88eb1faf81ef87c4f707",
+      "modelId": "openai:gpt-5.2",
+      "label": "gpt-5.2",
+      "recordedAt": "2026-08-22"
+    },
+    "b7a29c590338536cda3549a7dea7f9ba": {
+      "key": "b7a29c590338536cda3549a7dea7f9ba",
+      "modelId": "openai:gpt-5.6-luna",
+      "label": "gpt-5.6-luna",
+      "recordedAt": "2026-08-22"
+    },
+    "66a9aabfc5fb86781278a00cb3c8d398": {
+      "key": "66a9aabfc5fb86781278a00cb3c8d398",
+      "modelId": "openai:gpt-5.6-terra",
+      "label": "gpt-5.6-terra",
+      "recordedAt": "2026-08-22"
+    },
+    "84976850d8ef6564bdf58f7d9e1ffd7d": {
+      "key": "84976850d8ef6564bdf58f7d9e1ffd7d",
+      "modelId": "openai:gpt-4o",
+      "label": "gpt-4o",
+      "recordedAt": "2026-08-22"
+    },
+    "78b86507b8eababb6ed6de3bb88efd65": {
+      "key": "78b86507b8eababb6ed6de3bb88efd65",
+      "modelId": "openai:gpt-4.1",
+      "label": "gpt-4.1",
+      "recordedAt": "2026-08-22"
+    },
+    "f7be0a1b9b3fbeed36e904fd7c97f4f2": {
+      "key": "f7be0a1b9b3fbeed36e904fd7c97f4f2",
+      "modelId": "openai:o4-mini",
+      "label": "o4-mini",
+      "recordedAt": "2026-08-22"
+    },
+    "bd0124c8905b17854a01e418313220d6": {
+      "key": "bd0124c8905b17854a01e418313220d6",
+      "modelId": "openai:gpt-5.2",
+      "label": "gpt-5.2",
+      "recordedAt": "2026-08-22"
+    },
+    "40f1cc47f83f25da2991e0a62ada2893": {
+      "key": "40f1cc47f83f25da2991e0a62ada2893",
+      "modelId": "openai:gpt-5.6-luna",
+      "label": "gpt-5.6-luna",
+      "recordedAt": "2026-08-22"
+    },
+    "49db853d2561c22ac4f8557f53352899": {
+      "key": "49db853d2561c22ac4f8557f53352899",
+      "modelId": "openai:gpt-5.6-terra",
+      "label": "gpt-5.6-terra",
+      "recordedAt": "2026-08-22"
+    },
+    "8d488873f859a77c9ee33ed67bdf67cf": {
+      "key": "8d488873f859a77c9ee33ed67bdf67cf",
+      "modelId": "openai:gpt-4o",
+      "label": "gpt-4o",
+      "recordedAt": "2026-08-22"
+    },
+    "308e3ed1b4f0402c3a8e24f3dd6c9846": {
+      "key": "308e3ed1b4f0402c3a8e24f3dd6c9846",
+      "modelId": "openai:gpt-4.1",
+      "label": "gpt-4.1",
+      "recordedAt": "2026-08-22"
+    },
+    "e3466767037763efa44374fdca0fd9c6": {
+      "key": "e3466767037763efa44374fdca0fd9c6",
+      "modelId": "openai:o4-mini",
+      "label": "o4-mini",
+      "recordedAt": "2026-08-22"
+    },
+    "f11173c015f956d813b5f4adfa76c4b7": {
+      "key": "f11173c015f956d813b5f4adfa76c4b7",
+      "modelId": "openai:gpt-5.2",
+      "label": "gpt-5.2",
+      "recordedAt": "2026-08-22"
+    },
+    "f84804aaacc3b96d69cca0db466767e0": {
+      "key": "f84804aaacc3b96d69cca0db466767e0",
+      "modelId": "openai:gpt-5.6-luna",
+      "label": "gpt-5.6-luna",
+      "recordedAt": "2026-08-22"
+    },
+    "c481bac8aa93fe08b5a04d0ec8875395": {
+      "key": "c481bac8aa93fe08b5a04d0ec8875395",
+      "modelId": "openai:gpt-5.6-terra",
+      "label": "gpt-5.6-terra",
+      "recordedAt": "2026-08-22"
+    },
+    "7e3fb5f5e3fa6f996510cf234f1a431b": {
+      "key": "7e3fb5f5e3fa6f996510cf234f1a431b",
+      "modelId": "openai:gpt-5/high",
+      "label": "gpt-5 high",
+      "recordedAt": "2026-08-22"
+    },
+    "a016b227781e294faed96ccfe4bb405e": {
+      "key": "a016b227781e294faed96ccfe4bb405e",
+      "modelId": "openai:gpt-5/low",
+      "label": "gpt-5 low",
+      "recordedAt": "2026-08-22"
+    },
+    "3628ff88381aba460e6499fe8e3f57d7": {
+      "key": "3628ff88381aba460e6499fe8e3f57d7",
+      "modelId": "openai:gpt-5-mini/high",
+      "label": "gpt-5-mini high",
+      "recordedAt": "2026-08-22"
+    },
+    "420141526fd99183b2b468af5d3b9ded": {
+      "key": "420141526fd99183b2b468af5d3b9ded",
+      "modelId": "openai:gpt-5-mini/low",
+      "label": "gpt-5-mini low",
+      "recordedAt": "2026-08-22"
+    },
+    "854ee4c26906e40b464016427ace3b11": {
+      "key": "854ee4c26906e40b464016427ace3b11",
+      "modelId": "openai:gpt-5-nano",
+      "label": "gpt-5-nano",
+      "recordedAt": "2026-08-22"
+    }
+  },
+  "programs": {
+    "examples/dice-score.shall": {
+      "recordedAt": "2026-08-22",
+      "readers": [
+        "gpt-4o",
+        "gpt-4.1",
+        "o4-mini",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra"
+      ]
+    },
+    "examples/leaderboard.shall": {
+      "recordedAt": "2026-08-22",
+      "readers": [
+        "gpt-4o",
+        "gpt-4.1",
+        "o4-mini",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra"
+      ]
+    },
+    "examples/order-total.fixed.shall": {
+      "recordedAt": "2026-08-22",
+      "readers": [
+        "gpt-4o",
+        "gpt-4.1",
+        "o4-mini",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra"
+      ]
+    },
+    "examples/order-total.shall": {
+      "recordedAt": "2026-08-22",
+      "readers": [
+        "gpt-5 high",
+        "gpt-5 low",
+        "gpt-5-mini high",
+        "gpt-5-mini low",
+        "gpt-5-nano"
+      ]
+    },
+    "examples/password-strength.shall": {
+      "recordedAt": "2026-08-22",
+      "readers": [
+        "gpt-4o",
+        "gpt-4.1",
+        "o4-mini",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra"
+      ]
+    },
+    "examples/word-count.fixed.shall": {
+      "recordedAt": "2026-08-22",
+      "readers": [
+        "gpt-4o",
+        "gpt-4.1",
+        "o4-mini",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra"
+      ]
+    },
+    "examples/word-count.shall": {
+      "recordedAt": "2026-08-22",
+      "readers": [
+        "gpt-4o",
+        "gpt-4.1",
+        "o4-mini",
+        "gpt-5.2",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra"
+      ]
+    }
+  }
+}

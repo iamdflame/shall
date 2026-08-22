@@ -13,29 +13,16 @@ that is a compile error — and it points at the sentence.*
 
 ---
 
-## The one-minute version
+## Run it in thirty seconds, with no API key
 
-Write a specification. Not a prompt — a specification, with an interface and
-acceptance criteria in EARS:
-
+```bash
+git clone https://github.com/iamdflame/shall && cd shall
+npm install && npm run build
+node dist/shall/cli.js check examples/word-count.shall
 ```
-program WordCount
-
-interface
-  input  text: string
-  output count: integer
-
-Requirement 1: Words
-  THE SYSTEM SHALL count the words in the text
-
-Requirement 2: Significance
-  THE SYSTEM SHALL ignore words shorter than three letters
-```
-
-Compile it:
 
 ```console
-$ shall check examples/word-count.shall
+  replaying 6 recorded readers (2026-08-22) - --live to re-ask
 
 AMBIGUOUS SPECIFICATION  WordCount
 ──────────────────────────────────────────────────────────────────
@@ -55,18 +42,81 @@ AMBIGUOUS SPECIFICATION  WordCount
 
      5    gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra
      2    gpt-4o, gpt-5.6-luna
-
-$ echo $?
-1
 ```
 
-That specification reads fine. Six models spanning gpt-4o to gpt-5.6 read it and
-wrote **three behaviourally different programs**. Nobody said whether a hyphen
-separates words, so four readers said 5 and two said 2.
+Every bundled example ships with its **recorded ensemble** — the verbatim output
+of a real run against six models, committed to this repository and stamped with
+its date. Replaying costs nothing and reproduces exactly what the author saw.
+`--live` re-asks the models for real.
 
-Fix the sentence, and it compiles.
+## The specification that produced it
 
----
+```
+program WordCount
+
+interface
+  input  text: string
+  output count: integer
+
+Requirement 1: Words
+  THE SYSTEM SHALL count the words in the text
+
+Requirement 2: Significance
+  THE SYSTEM SHALL ignore words shorter than three letters
+```
+
+That reads fine. Six models spanning gpt-4o to gpt-5.6 read it and wrote **three
+behaviourally different programs**, because nobody said whether a hyphen
+separates words.
+
+## Now fix the sentence
+
+```diff
+- THE SYSTEM SHALL count the words in the text
++ THE SYSTEM SHALL split the text on runs of whitespace and treat each
++   resulting non-empty run as exactly one token, no matter which hyphens,
++   apostrophes, digits or punctuation marks it contains
+```
+
+```console
+$ node dist/shall/cli.js check examples/word-count.fixed.shall
+
+UNAMBIGUOUS  WordCount
+──────────────────────────────────────────────────────────────────
+
+  6 independent readers produced the same behaviour on all 33 probes.
+
+    = gpt-4o        = gpt-4.1       = o4-mini
+    = gpt-5.2       = gpt-5.6-luna  = gpt-5.6-terra
+
+  CONFORMANCE  100%  11/11 derived cases hold
+```
+
+One sentence. Ambiguous → unanimous. Both halves replay for free.
+
+## Reproduce the findings
+
+```bash
+npm run findings     # ten seconds, no API key, no spend
+```
+
+Three findings, each re-run from the committed recordings rather than asserted:
+
+| | Finding | Evidence |
+|---|---|---|
+| **1** | An ensemble of one model family shares its blind spots | Five same-generation readers call a spec unanimous — and two of them wrote comments silently resolving the ambiguity |
+| **2** | Human intuition about ambiguity is unreliable | A clause humans read two ways is unanimous at **5,000 probes**; a mundane one splits at 23 |
+| **3** | Some disagreement is arithmetic, not English | Two orderings of the same arithmetic differ by 1 ULP; reporting that as ambiguity blames an innocent clause |
+
+Finding 1's evidence is the readers' own generated source:
+
+```js
+// gpt-5 low
+const shipping = discounted < 50 ? 6 : 0;   // Shipping: add 6 if order (after coupon) is below 50
+```
+
+It *noticed* the ambiguity, resolved it silently, and the ensemble reported
+unanimous agreement. That is the failure mode a single-family roster has.
 
 ## Why this is not "ask a model if it's ambiguous"
 
@@ -79,6 +129,21 @@ the exact input that exposes it. Every rejection in this README is a measurement
 with a witness attached, not an opinion.
 
 ---
+
+## Where this sits
+
+| | Input | Question it answers | What it costs you |
+|---|---|---|---|
+| Property-based testing | running code | does it behave correctly | the code must already exist |
+| Kiro spec correctness | spec + code | does the code satisfy the spec | assumes the spec means one thing |
+| TLA+ / Alloy | a formal model | is the model consistent | you must abandon English |
+| "Ask a model if it's ambiguous" | prose | does a model *think* it's unclear | an opinion, unfalsifiable |
+| **SHALL** | **prose alone** | **does the English determine behaviour** | **N independent readers** |
+
+The row that matters is TLA+. Formal methods answer this question rigorously and
+charge you the English to do it. SHALL's bet is that you keep the English and
+*measure* it instead — weaker than a proof, and available to anyone who can
+write a requirement.
 
 ## What one build actually does
 
@@ -115,29 +180,26 @@ and it is reported as disputed.
 
 ---
 
-## Install
+## Install and verify
 
 Node 20+. One runtime dependency.
 
 ```bash
-git clone <this-repo> shall && cd shall
 npm install && npm run build
+
+npm test          # 112 tests
+npm run findings  # reproduce all three findings, no API key
+npm run verify    # this repo against its own .kiro spec — 25/25
 ```
+
+To run against **your own** specifications you need a key, since nothing is
+recorded for them:
 
 ```bash
 echo 'OPENAI_API_KEY=sk-...' > .env      # git-ignored; the CLI loads it
+node dist/shall/cli.js check my-spec.shall
+node dist/shall/cli.js record my-spec.shall   # commit it so others replay free
 ```
-
-Then:
-
-```bash
-npm test                                     # 104 tests
-npm run verify                               # this repo vs its own spec — 25/25
-node dist/shall/cli.js lint examples/word-count.shall   # no API key needed
-node dist/shall/cli.js check examples/word-count.shall  # the real thing
-```
-
----
 
 ## Commands
 
@@ -146,13 +208,15 @@ node dist/shall/cli.js check examples/word-count.shall  # the real thing
 | `shall build <f>` | Compile. Emits JavaScript, or fails with the clause named. |
 | `shall check <f>` | Same analysis, emits nothing. For CI. |
 | `shall lint <f>` | Static scan for open wording. **No model calls, no API key.** |
+| `shall record <f>` | Ask the readers for real and commit the result to `recordings/`. |
 | `shall run <f> --input '{…}'` | Build from cache and execute one input. |
 | `shall verify` | Check this repository against its own `.kiro` specification. |
 | `shall models` | List the models your account can actually reach. |
 
 | Flag | Effect |
 |---|---|
-| `--offline` | Use cached readers only; never call a model. |
+| `--live` | Re-ask every reader for real. Costs money. |
+| `--offline` | Never call a model, even if nothing is recorded. |
 | `--no-conform` | Consensus only, skip the conformance pass. |
 | `--no-cache` | Re-ask every reader. |
 | `--probes <n>` | Probe count. Probes are microseconds; readers are not. |
@@ -163,16 +227,13 @@ Exit codes: `0` unambiguous · `1` ambiguous or invalid · `2` could not run.
 
 ---
 
-## Two findings that changed the design
-
-Both were measured on this project, and both contradicted the original design.
+## The findings in detail
 
 ### An ensemble of one family is not an ensemble
 
 The first roster was five GPT-5 variants at different sizes and reasoning
 efforts. It passed a specification a human would question. Every member resolved
-the open clause by the same shared convention — **one wrote a comment
-acknowledging the ambiguity before silently picking a side.**
+the open clause the same way, and two wrote comments showing they had noticed it.
 
 Size and effort are not independence. The roster now spans generations:
 
@@ -180,16 +241,19 @@ Size and effort are not independence. The roster now spans generations:
 gpt-4o · gpt-4.1 · o4-mini · gpt-5.2 · gpt-5.6-luna · gpt-5.6-terra
 ```
 
-Cross-vendor readers would be better still, and the provider boundary exists so
-that adding one touches nothing else.
+Cross-vendor readers would be better still. The provider boundary exists so that
+adding one touches nothing else — every vendor with an OpenAI-compatible
+endpoint fits behind it without a new dependency. **This remains the single
+biggest known weakness**, and the honest version of the roster claim is that
+spanning generations is better than spanning sizes, not that it is sufficient.
 
-### Human intuition about ambiguity is unreliable
+### You cannot reason your way to which sentences are ambiguous
 
 A hand-written "ambiguous" example — whether a coupon applies before or after a
 shipping threshold — came back **unanimous at 5,000 probes** across all six
-generations. LLMs share a strong convention there that humans do not.
+generations. Models share a strong convention there that humans do not.
 
-The ambiguity that actually splits readers was mundane: what is a *word*.
+The ambiguity that actually split readers was mundane: what is a *word*.
 
 | Input | Readings | Never stated |
 |---|---|---|
@@ -200,9 +264,26 @@ The ambiguity that actually splits readers was mundane: what is a *word*.
 | `"ß Ünïcode naïve"` | **1** vs **2** | are accented characters letters |
 | `"..."` | **0** vs **1** | is punctuation a three-letter word |
 
-You cannot reason your way to which sentences are ambiguous. You have to run it.
+### Some disagreement is arithmetic
 
----
+`0.1 + 0.2` and `0.3` are different numbers. Two readers that understood the
+specification identically, differing only in the order they multiplied, were
+being reported as an **ambiguous specification** pointing at an innocent clause.
+
+Divergences are now classified. A split explained entirely by floating point is
+reported separately and does not fail the build:
+
+```
+  FLOATING-POINT DIVERGENCE
+  readers agree on the behaviour; they differ by a few ULPs at 3 probe(s).
+  This is IEEE 754, not your English. State a rounding mode to remove it.
+```
+
+The distinction matters because false positives are fatal here — an author sent
+to edit correct prose stops trusting the tool. Catastrophic cancellation is
+deliberately **not** absorbed into this class: `big - big*p` produces genuinely
+different numbers relative to a tiny result, and calling that equivalent would
+be the tool lying.
 
 ## Design decisions worth knowing
 
@@ -292,6 +373,13 @@ under-specified itself.
   warning, never an error.
 - **Compiled output is JavaScript.** Nothing in the design is language-specific,
   but nothing else is implemented.
+- **Numeric equivalence is a relative-epsilon test**, not a bit-exact ULP count,
+  tuned at 4 ULPs. It is deliberately conservative: it never bridges zero or a
+  sign change, and it never absorbs catastrophic cancellation. Of the seven
+  bundled examples, one produces float-only divergence; before this class
+  existed that example would have been reported as an ambiguous specification.
+- **Recordings are a snapshot.** A replay reproduces the run it captured, not
+  what those models would say today. `--live` is the only current answer.
 
 ---
 
@@ -302,11 +390,16 @@ src/shall/     the language, compiler, oracle, conformance, CLI
 src/ears/      EARS clause parser, shared with .kiro specs
 src/{binding,verify,lock,report}/   the engine behind `shall verify`
 examples/      .shall programs, each with an ambiguous and a fixed version
-tests/         104 tests, TAP
+recordings/    committed ensemble outputs, so every example replays for free
+scripts/       findings.mjs — reproduces all three findings offline
+tests/         112 tests, TAP
 .kiro/         the specification this repository is verified against
 ```
 
-104 tests · 25/25 criteria proven · one runtime dependency · TypeScript strict.
+112 tests · 25/25 criteria proven · 42 recorded readers · one runtime dependency.
+
+This repository has one commit. [`PROVENANCE.md`](PROVENANCE.md) explains why,
+and what evidence exists in place of a history.
 
 ## License
 

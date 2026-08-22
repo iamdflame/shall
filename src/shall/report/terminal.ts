@@ -120,7 +120,7 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
   out.push('');
   out.push(`  ${reason}.`);
   out.push(
-    `  ${dim(`${oracle.loadable.length} readers, ${oracle.probes.length} probes, ${oracle.divergences.length} disagreements`)}`,
+    `  ${dim(`${oracle.loadable.length} readers, ${oracle.probes.length} probes, ${oracle.behaviourDivergences.length} disagreements`)}`,
   );
   out.push('');
 
@@ -130,20 +130,20 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
 
   for (const attribution of shown) {
     const witness =
-      oracle.divergences.find((d) => !used.has(d.probe.id)) ?? oracle.divergences[0];
+      oracle.behaviourDivergences.find((d) => !used.has(d.probe.id)) ?? oracle.behaviourDivergences[0];
     if (witness) used.add(witness.probe.id);
     out.push(dim(RULE));
     out.push('');
     out.push(...diagnostic(program, attribution, vagueness, witness));
   }
 
-  if (attributions.length === 0 && oracle.divergences.length > 0) {
+  if (attributions.length === 0 && oracle.behaviourDivergences.length > 0) {
     out.push(dim(RULE));
     out.push('');
     out.push(`  ${amber('The readers disagreed, but no single clause is clearly responsible.')}`);
     out.push(`  ${dim('The disagreement may come from an interaction between requirements.')}`);
     out.push('');
-    const w = oracle.divergences[0]!;
+    const w = oracle.behaviourDivergences[0]!;
     out.push(`   ${bold('WITNESS')}  ${cyan(formatInput(w.probe.input))}`);
     out.push('');
     for (const reading of w.readings) {
@@ -206,6 +206,23 @@ export function renderSuccess(input: SuccessReportInput): string {
     for (const w of vagueness.slice(0, 5)) {
       out.push(`    ${amber('!')} ${grey(`${program.path}:${w.criterion.line}`)}  ${bold(w.term)}`);
       out.push(`      ${dim(w.why)}`);
+    }
+    out.push('');
+  }
+
+  if (oracle.numericDivergences.length > 0) {
+    out.push(dim(RULE));
+    out.push('');
+    out.push(`  ${amber('FLOATING-POINT DIVERGENCE')}`);
+    out.push(
+      `  ${dim(`readers agree on the behaviour; they differ by a few ULPs at ${oracle.numericDivergences.length} probe(s).`)}`,
+    );
+    out.push(`  ${dim('This is IEEE 754, not your English. State a rounding mode to remove it.')}`);
+    out.push('');
+    const d = oracle.numericDivergences[0]!;
+    out.push(`   ${bold('EXAMPLE')}  ${cyan(formatInput(d.probe.input))}`);
+    for (const reading of d.readings) {
+      out.push(`     ${bold(reading.display.padEnd(24))} ${grey(reading.members.join(', '))}`);
     }
     out.push('');
   }

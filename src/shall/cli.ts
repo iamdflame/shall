@@ -16,6 +16,7 @@ import { programCriteria } from './lang/types.js';
 import { createHash } from 'node:crypto';
 import { buildCompilerInput } from './compile/prompt.js';
 import type { Program } from './lang/types.js';
+import { readManifest, readRecording, describeRecording } from './compile/recordings.js';
 import { loadSpecs } from '../ears/spec-reader.js';
 import { scanBindings } from '../binding/scanner.js';
 import { runTests } from '../verify/runner.js';
@@ -38,6 +39,8 @@ COMMANDS
                   ambiguity report naming the clause responsible.
   check <file>    Same analysis, but emit nothing. For CI.
   lint <file>     Static scan for open wording. No model calls, no API key.
+  record <file>   Ask the readers for real and commit the result to recordings/
+                  so anyone can replay the same run for free.
   run <file>      Build (using cache) and execute against one input.
   verify          Check this repository against its own .kiro specification.
   models          List models this account can actually reach.
@@ -45,7 +48,8 @@ COMMANDS
 
 OPTIONS
   --input <json>  Input object for 'run', e.g. '{"subtotal":51,"couponPercent":6}'
-  --offline       Use only cached candidates; never call a model.
+  --live          Re-ask every reader for real. Costs money.
+  --offline       Never call a model, even if nothing is recorded.
   --no-conform    Skip the conformance pass (consensus only).
   --no-cache      Recompile every reader, ignoring cache.
   --probes <n>    Structural probe count (default from config).
@@ -61,6 +65,8 @@ EXIT CODES
 
 interface Flags {
   offline: boolean;
+  live: boolean;
+  record: boolean;
   update: boolean;
   verbose: boolean;
   noConform: boolean;
@@ -79,6 +85,8 @@ function parseFlags(argv: string[]): Flags {
   const probes = value('--probes');
   return {
     offline: argv.includes('--offline'),
+    live: argv.includes('--live'),
+    record: argv.includes('--record'),
     update: argv.includes('--update'),
     verbose: argv.includes('--verbose') || argv.includes('-v'),
     noConform: argv.includes('--no-conform'),
@@ -109,6 +117,14 @@ function loadDotEnv(): void {
     return;
   }
   if (had) process.env.OPENAI_API_KEY = had;
+}
+
+/** The recording key must match the compiler's cache key exactly. */
+function recordingKeyFor(compilerInput: string, modelId: string): string {
+  return createHash('sha256')
+    .update(['v1', modelId, compilerInput].join('\n---\n'))
+    .digest('hex')
+    .slice(0, 32);
 }
 
 class CliError extends Error {
@@ -142,11 +158,29 @@ async function analyse(file: string, flags: Flags) {
   const provider = new OpenAIProvider();
   const cacheDir = join(root, config.buildDir, 'cache');
 
-  if (!flags.offline && !provider.isConfigured()) {
+  // Does a committed recording cover this exact program for every reader?
+  const manifest = readManifest(root);
+  const compilerInput = buildCompilerInput(program);
+  const fullyRecorded =
+    !flags.live &&
+    config.ensemble.every((model) =>
+      readRecording(root, recordingKeyFor(compilerInput, model.id)) !== null,
+    );
+
+  if (!fullyRecorded && !flags.offline && !provider.isConfigured()) {
     throw new CliError(
-      'OPENAI_API_KEY is not set.\n' +
-        '  Set it, or run with --offline to use previously cached readers,\n' +
-        '  or run `shall lint` which needs no model at all.',
+      'OPENAI_API_KEY is not set, and this program has no committed recording.\n' +
+        '  Try one of the bundled examples, which replay for free:\n' +
+        '    shall check examples/word-count.shall\n' +
+        '  Or run `shall lint`, which needs no model at all.',
+    );
+  }
+
+  if (fullyRecorded && !flags.json) {
+    const info = describeRecording(manifest, file);
+    const when = info ? info.recordedAt : 'a previous run';
+    process.stderr.write(
+      `  replaying ${config.ensemble.length} recorded readers (${when}) - --live to re-ask\n`,
     );
   }
 
@@ -154,7 +188,7 @@ async function analyse(file: string, flags: Flags) {
   let probes = structuralProbes(program, probeLimit);
 
   // Adversarial probes need a model; structural probes alone still work offline.
-  if (!flags.offline) {
+  if (!flags.offline && !fullyRecorded && provider.isConfigured()) {
     try {
       const result = await provider.complete(config.ensemble[0]!, {
         instructions: PROBE_INSTRUCTIONS,
@@ -173,17 +207,26 @@ async function analyse(file: string, flags: Flags) {
     provider,
     maxOutputTokens: config.maxOutputTokens,
     cacheDir,
+    root,
+    live: flags.live,
+    record: flags.record,
+    programName: file,
     noCache: flags.noCache,
     onProgress: flags.json
       ? undefined
       : (e) => {
-          if (e.state === 'start') process.stderr.write(`  reading  ${e.label}...\n`);
-          if (e.state === 'cached') process.stderr.write(`  cached   ${e.label}\n`);
+          if (e.state === 'start') process.stderr.write(`  reading   ${e.label}...\n`);
+          if (e.state === 'cached') process.stderr.write(`  cached    ${e.label}\n`);
+          if (e.state === 'recorded') process.stderr.write(`  recorded  ${e.label}\n`);
         },
   });
 
-  if (flags.offline && compiled.candidates.length === 0) {
-    throw new CliError('no cached readers for this program - run once without --offline first');
+  if (compiled.candidates.length === 0) {
+    throw new CliError(
+      flags.offline
+        ? 'nothing recorded or cached for this program, and --offline forbids asking'
+        : 'no reader produced a candidate for this program',
+    );
   }
 
   const oracle = runDifferential(compiled.candidates, {
@@ -193,7 +236,8 @@ async function analyse(file: string, flags: Flags) {
 
   const verdict = buildVerdict(oracle, config.quorum);
   const vagueness = lintVagueness(program);
-  const attributions = attribute(program, oracle.divergences, probes);
+  // Arithmetic artefacts must never implicate a clause.
+  const attributions = attribute(program, oracle.behaviourDivergences, probes);
 
   return { program, config, oracle, verdict, vagueness, attributions, compiled, root };
 }
@@ -214,6 +258,7 @@ async function runConformance(
   root: string,
 ) {
   if (flags.noConform) return null;
+  if (flags.offline && !existsSync(join(root, config.buildDir, 'cache'))) return null;
 
   const criteria = programCriteria(program);
   const jurors = config.ensemble.slice(0, Math.min(3, config.ensemble.length));
@@ -267,7 +312,11 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
           unambiguous: verdict.ok,
           readers: oracle.loadable.length,
           probes: oracle.probes.length,
-          divergences: oracle.divergences.map((d) => ({
+          divergences: oracle.behaviourDivergences.map((d) => ({
+            input: d.probe.input,
+            readings: d.readings.map((r) => ({ value: r.display, readers: r.members })),
+          })),
+          numericDivergences: oracle.numericDivergences.map((d) => ({
             input: d.probe.input,
             readings: d.readings.map((r) => ({ value: r.display, readers: r.members })),
           })),
@@ -450,6 +499,7 @@ async function main(): Promise<void> {
       case 'build':  process.exitCode = await cmdBuild(file, flags, true); break;
       case 'check':  process.exitCode = await cmdBuild(file, flags, false); break;
       case 'lint':   process.exitCode = cmdLint(file); break;
+      case 'record': process.exitCode = await cmdBuild(file, { ...flags, live: true, record: true }, false); break;
       case 'run':    process.exitCode = await cmdRun(file, flags); break;
       case 'verify': process.exitCode = await cmdVerify(flags); break;
       case 'models': process.exitCode = await cmdModels(); break;

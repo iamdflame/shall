@@ -118,3 +118,21 @@ test('list probes exercise repetition, not just distinct prefixes', () => {
   );
   assert.ok(lists.some((l) => l.length >= 3 && new Set(l).size > 1), 'and one without');
 });
+
+/* ── the .kiro listing must agree with the verifier ─────────────────────── */
+
+test('the criteria count shown on screen matches what shall verify checks', async () => {
+  const { execSync } = await import('node:child_process');
+  const { loadSpecs, allCriteria } = await import('../dist/ears/spec-reader.js');
+
+  const listed = execSync('node scripts/kiro-tree.mjs', { env: { ...process.env, NO_COLOR: '1' } })
+    .toString()
+    .match(/^\s+(\d+) criteria\s*$/m);
+  assert.ok(listed, 'the listing must print a total');
+
+  const actual = allCriteria(loadSpecs('.kiro')).length;
+  assert.equal(
+    Number(listed[1]), actual,
+    'the number shown in the demo must be the number the verifier checks',
+  );
+});

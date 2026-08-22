@@ -19,7 +19,8 @@
     "verify": "node dist/shall/cli.js verify",
     "findings": "node scripts/findings.mjs",
     "record": "node dist/shall/cli.js record",
-    "install-cli": "bash scripts/install-cli.sh"
+    "install-cli": "bash scripts/install-cli.sh",
+    "kiro": "node scripts/kiro-tree.mjs"
   },
   "keywords": [
     "spec-driven-development",

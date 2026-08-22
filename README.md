@@ -193,6 +193,7 @@ npm install && npm run build
 
 npm test          # 145 tests
 npm run findings  # reproduce all three findings, no API key
+npm run kiro      # what the .kiro package contains
 npm run verify    # this repo against its own .kiro spec — 50/50
 ```
 

@@ -219,6 +219,30 @@
   install something is a demo you shoot twice.
 </p>
 
+<h3>Check what you already have</h3>
+<p class="muted">
+  Run this first. It tells you what is missing before you find out mid-recording.
+</p>
+
+<pre>for c in node npm git obs kdenlive; do
+  command -v $c &gt;/dev/null &amp;&amp; echo "ok      $c" || echo "MISSING $c"
+done</pre>
+
+<p>
+  On this machine <strong>node, npm, git and OBS are already installed</strong>.
+  Only the video editor is missing:
+</p>
+
+<pre>sudo apt install kdenlive</pre>
+
+<div class="note">
+  <strong>You do not need <code>tree</code>.</strong>
+  An earlier version of this guide used it; it is not installed and does not need
+  to be. <code>npm run kiro</code> replaces it and is a better shot &mdash; it
+  prints the spec folders <em>and</em> their criteria counts, so the 50 in the
+  listing and the 50 in <code>npm run verify</code> appear in the same scene.
+</div>
+
 <h3>Make a clean terminal</h3>
 <p class="muted">
   The recording is mostly terminal, so the terminal has to look good. Big text,
@@ -258,6 +282,22 @@ npm run install-cli</pre>
   permissions error. <code>npm run install-cli</code> writes a small wrapper into
   <code>~/.local/bin</code> instead, which is already on your PATH.
 </div>
+
+<h3>What the .kiro shot looks like</h3>
+<pre>$ npm run kiro
+
+.kiro
+├── steering/   product · structure · tech
+├── hooks/      3 agent hooks
+└── specs/
+    ├── shall-language         25 criteria  + design · tasks
+    ├── disambiguation         10 criteria
+    ├── offline-replay          9 criteria
+    └── multi-vendor-ensemble   6 criteria
+
+                          ────────────
+                           <span class="g">50 criteria</span>
+                          <span class="g">all bound to code and to a test</span></pre>
 
 <h3>Silence your terminal's startup errors</h3>
 <p class="muted">
@@ -394,8 +434,10 @@ shall check examples/word-count.shall</pre>
       itself.
     </p>
     <p class="onscreen">
-      <b>On screen:</b> briefly show the <code>.kiro/</code> folder tree, then run
-      <code>npm run verify</code> and hold on <code>50/50 criteria proven</code>.
+      <b>On screen:</b> run <code>npm run kiro</code> &mdash; it prints the four specs
+      with their criteria counts adding to 50 &mdash; then <code>npm run verify</code>,
+      and hold on <code>50/50 criteria proven</code>. The two numbers matching on
+      screen is the whole point of the shot.
     </p>
   </div>
 
@@ -534,7 +576,7 @@ Recording quality: High Quality, Medium File Size</pre></li>
     <tr><td class="t">clip-2</td><td>Terminal. Type <code>shall check examples/word-count.shall</code>, Enter, let it finish.</td><td>~10 s</td></tr>
     <tr><td class="t">clip-3</td><td>Same output still on screen. Don't type. Just let it sit.</td><td>~20 s</td></tr>
     <tr><td class="t">clip-4</td><td><code>git diff</code> of the fixed file, then <code>shall check examples/word-count.fixed.shall</code>.</td><td>~15 s</td></tr>
-    <tr><td class="t">clip-5</td><td><code>tree .kiro</code> then <code>npm run verify</code>.</td><td>~25 s</td></tr>
+    <tr><td class="t">clip-5</td><td><code>npm run kiro</code> then <code>npm run verify</code>.</td><td>~25 s</td></tr>
     <tr><td class="t">clip-6</td><td><code>npm run findings</code>. Runs about 70 s — you will speed this up later.</td><td>~70 s</td></tr>
     <tr><td class="t">clip-7</td><td>A plain terminal showing the repo URL, or a simple title card.</td><td>~8 s</td></tr>
   </tbody>
@@ -550,6 +592,7 @@ Recording quality: High Quality, Medium File Size</pre></li>
   <strong>The exact commands, ready to copy.</strong>
   <pre>shall check examples/word-count.shall
 shall check examples/word-count.fixed.shall
+npm run kiro
 npm run verify
 npm run findings</pre>
 </div>

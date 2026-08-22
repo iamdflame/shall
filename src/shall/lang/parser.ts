@@ -47,8 +47,8 @@ function parseType(raw: string, line: number, diagnostics: ParseDiagnostic[]): S
   return null;
 }
 
-// @shall 1.1
-// @shall 1.4
+// @shall shall-language/1.1
+// @shall shall-language/1.4
 export function parseShall(source: string, path: string): ParsedProgram {
   const lines = source.split(/\r?\n/);
   const diagnostics: ParseDiagnostic[] = [];
@@ -175,14 +175,14 @@ export function parseShall(source: string, path: string): ParsedProgram {
     diagnostics.push({ line: 1, message: 'no program declaration — expected "program <Name>"', fatal: true });
     return { program: null, diagnostics };
   }
-  // @shall 1.2
+  // @shall shall-language/1.2
   if (inputs.length === 0) {
     diagnostics.push({ line: nameLine, message: 'the interface declares no inputs — nothing can be tested', fatal: true });
   }
   if (outputs.length === 0) {
     diagnostics.push({ line: nameLine, message: 'the interface declares no outputs — nothing can be compared', fatal: true });
   }
-  // @shall 1.3
+  // @shall shall-language/1.3
   if (outputs.length > 1) {
     diagnostics.push({
       line: outputs[1]!.line,

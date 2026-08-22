@@ -18,7 +18,7 @@ import { typeName } from '../lang/types.js';
  * obvious reading, which is exactly the bias we are trying to measure.
  */
 
-// @shall 2.2
+// @shall shall-language/2.2
 export const COMPILER_INSTRUCTIONS = `You are a compiler. You translate a specification written in English into a JavaScript module.
 
 Output requirements:

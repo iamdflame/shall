@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
  *
  * A criterion is bound to code by an explicit annotation:
  *
- *   // @shall 1.2                  — this code implements criterion 1.2
+ *   // @shall shall-language/1.2                  — this code implements criterion 1.2
  *   // @shall keel-core/1.2        — fully qualified, when several specs exist
  *
  * Explicit annotation is deliberate. Keel could guess bindings by matching
@@ -80,7 +80,7 @@ export function isTestPath(relPath: string): boolean {
  * Character ranges occupied by string literals on a line.
  *
  * Annotations inside string literals are data, not code: test fixtures embed
- * `// @shall 1.1` in sample sources, and help text quotes the syntax. Binding
+ * `// @shall shall-language/1.1` in sample sources, and help text quotes the syntax. Binding
  * those would attach real criteria to fictional code regions and produce
  * spurious drift when the fixture is edited.
  */
@@ -206,9 +206,13 @@ export function scanBindings(root: string, extraIgnores: string[] = []): Binding
       // If the next non-blank line declares a test, capture its name so the
       // static binding can be joined to the runtime result.
       let testName: string | undefined;
-      for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
+      for (let j = i + 1; j < Math.min(lines.length, i + 8); j++) {
         const candidate = lines[j]!;
         if (!candidate.trim()) continue;
+        // Several criteria are often proven by one test, stacked above it.
+        // Stopping at the first non-blank line bound only the last annotation
+        // and silently left every criterion above it unverified.
+        if (ANNOTATION.test(candidate)) continue;
         const testMatch = candidate.match(TEST_CALL);
         if (testMatch) testName = testMatch[2];
         break;

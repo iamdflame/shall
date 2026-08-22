@@ -33,7 +33,7 @@ export function run(args) {
   return n;
 }`;
 
-// @shall 3.1
+// @shall shall-language/3.1
 test('behaviour is compared, not source text', () => {
   const probes = structuralProbes(program, 40);
 
@@ -78,7 +78,7 @@ function ambiguityReport(): string {
   });
 }
 
-// @shall 4.1
+// @shall shall-language/4.1
 test('a rejected build reports the concrete input the readers differed on', () => {
   const text = ambiguityReport();
   assert.match(text, /WITNESS/);
@@ -86,7 +86,7 @@ test('a rejected build reports the concrete input the readers differed on', () =
   assert.match(text, /examples\/word-count\.shall:\d+/, 'and the line to edit');
 });
 
-// @shall 4.2
+// @shall shall-language/4.2
 test('a rejected build reports which reader produced which result', () => {
   const text = ambiguityReport();
   for (const reader of ['reader-alpha', 'reader-beta', 'reader-gamma']) {
@@ -98,7 +98,7 @@ test('a rejected build reports which reader produced which result', () => {
   assert.ok(!line.includes('reader-beta'), 'the dissenting reader appears separately');
 });
 
-// @shall 5.1
+// @shall shall-language/5.1
 test('expectations are derived from every criterion, not just the first', async () => {
   const criteria = programCriteria(program);
   assert.ok(criteria.length >= 3);

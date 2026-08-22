@@ -77,7 +77,7 @@ export function checkConformance(
     }
 
     const cases = casesByCriterion.get(criterion.id) ?? [];
-    // @shall 5.4
+    // @shall shall-language/5.4
     if (cases.length === 0) {
       return {
         criterion, status: 'undetermined', checked: 0, passed: 0, failures: [], disputed: disputes,
@@ -127,7 +127,7 @@ export function checkConformance(
 }
 
 /** A build is rejected when the program contradicts a clause it claims to implement. */
-// @shall 5.3
+// @shall shall-language/5.3
 export function conformanceBlocks(report: ConformanceReport): boolean {
   return report.violations > 0;
 }

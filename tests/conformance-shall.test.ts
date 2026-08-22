@@ -40,7 +40,7 @@ test('a program satisfying every clause reports full conformance', () => {
   assert.ok(report.criteria.every((c) => c.status === 'satisfied'));
 });
 
-// @shall 5.3
+// @shall shall-language/5.3
 test('THE POINT: agreement does not imply correctness', () => {
   // Both readers would return this program; it still contradicts clause 1.1,
   // which says punctuation must not affect tokenisation.
@@ -58,7 +58,7 @@ test('THE POINT: agreement does not imply correctness', () => {
   assert.match(violated.reason, /contradict the built program/);
 });
 
-// @shall 5.4
+// @shall shall-language/5.4
 test('a clause the readers could not agree about is undetermined, not passed', () => {
   const disputed = [
     { criterionId: '2.1', input: { text: 'a-b' }, proposals: [{ value: 0, count: 1 }, { value: 1, count: 1 }] },

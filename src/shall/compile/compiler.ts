@@ -58,6 +58,7 @@ export interface CompileResult {
  * the key depend on a second evaluation of a function whose result must be
  * byte-identical for the cache to be sound - a fragility with no upside.
  */
+// @shall offline-replay/2.2
 function cacheKey(compilerInput: string, model: CompilerModel): string {
   return createHash('sha256')
     .update([PROMPT_VERSION, model.id, compilerInput].join('\n---\n'))
@@ -84,7 +85,7 @@ export interface CompileOptions {
   onProgress?: (event: { modelId: string; label: string; state: 'start' | 'done' | 'cached' | 'recorded' | 'failed' }) => void;
 }
 
-// @shall 2.1
+// @shall shall-language/2.1
 export async function compileEnsemble(options: CompileOptions): Promise<CompileResult> {
   const { program, ensemble, provider, maxOutputTokens, cacheDir, noCache, onProgress,
           root, live, record, programName } = options;
@@ -99,6 +100,8 @@ export async function compileEnsemble(options: CompileOptions): Promise<CompileR
 
       // Recordings come first. A reader with no API key gets the full result,
       // and it is the same result the author saw, not an approximation of it.
+      // @shall offline-replay/1.1
+      // @shall offline-replay/1.3
       if (!live && root) {
         const recorded = readRecording(root, key);
         if (recorded) {
@@ -111,7 +114,7 @@ export async function compileEnsemble(options: CompileOptions): Promise<CompileR
         }
       }
 
-      // @shall 2.4
+      // @shall shall-language/2.4
       if (!noCache && existsSync(cachePath)) {
         onProgress?.({ modelId: model.id, label: model.label, state: 'cached' });
         return {
@@ -145,7 +148,7 @@ export async function compileEnsemble(options: CompileOptions): Promise<CompileR
           usage: result.usage,
           ms: result.ms,
         };
-      // @shall 2.3
+      // @shall shall-language/2.3
       } catch (err) {
         onProgress?.({ modelId: model.id, label: model.label, state: 'failed' });
         const kind = err instanceof ProviderError ? err.kind : 'unknown';
@@ -162,6 +165,7 @@ export async function compileEnsemble(options: CompileOptions): Promise<CompileR
   const candidates = settled.filter((r): r is Candidate => 'source' in r);
   const failures = settled.filter((r): r is CompileFailure => 'reason' in r);
 
+  // @shall offline-replay/2.1
   if (record && root && candidates.length > 0) {
     const manifest = readManifest(root);
     const recordedAt = new Date().toISOString().slice(0, 10);

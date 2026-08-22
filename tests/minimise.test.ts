@@ -13,6 +13,7 @@ const KEEPS_HYPHENS  = 'export function run({ text }) { return text.split(/\\s+/
 
 const probe = (input: Record<string, unknown>) => ({ id: 'p', input, origin: 'structural' as const });
 
+// @shall disambiguation/1.1
 test('a long witness shrinks to the smallest input that still splits', () => {
   const result = minimiseWitness(
     program,
@@ -27,6 +28,7 @@ test('a long witness shrinks to the smallest input that still splits', () => {
   assert.ok(text.length <= 5, `expected a tiny witness, got ${JSON.stringify(text)}`);
 });
 
+// @shall disambiguation/1.2
 test('the minimal witness genuinely still splits the readers', () => {
   const result = minimiseWitness(
     program, probe({ text: 'well-known state-of-the-art' }),
@@ -44,6 +46,7 @@ test('minimisation is skipped when fewer than two readers load', () => {
   assert.deepEqual(result.input, { text: 'abc def' });
 });
 
+// @shall disambiguation/1.3
 test('an already-minimal witness is left alone', () => {
   const result = minimiseWitness(
     program, probe({ text: 'a-a' }),

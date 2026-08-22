@@ -181,6 +181,7 @@ async function analyse(file: string, flags: Flags) {
     );
 
   if (!fullyRecorded && !flags.offline && !provider.isConfigured()) {
+      // @shall offline-replay/1.4
     throw new CliError(
       'OPENAI_API_KEY is not set, and this program has no committed recording.\n' +
         '  Try one of the bundled examples, which replay for free:\n' +
@@ -189,6 +190,7 @@ async function analyse(file: string, flags: Flags) {
     );
   }
 
+  // @shall offline-replay/1.2
   if (fullyRecorded && !flags.json) {
     const info = describeRecording(manifest, file);
     const when = info ? info.recordedAt : 'a previous run';
@@ -205,6 +207,7 @@ async function analyse(file: string, flags: Flags) {
         `  skipping  ${roster.dropped.map((m) => m.label).join(', ')} (no key for ${[...new Set(roster.dropped.map((m) => m.provider))].join(', ')})\n`,
       );
     }
+    // @shall multi-vendor-ensemble/2.2
     if (roster.singleVendor && roster.usable.length > 0) {
       process.stderr.write(
         `  note      all ${roster.usable.length} readers are ${roster.vendors[0]} - same-vendor readers share blind spots\n`,
@@ -273,6 +276,7 @@ async function analyse(file: string, flags: Flags) {
     // Re-group the readers by what they return for the SHRUNK input. Reusing
     // the probe's readings here would pair an input with outputs measured
     // somewhere else, which is a report that is simply wrong.
+    // @shall disambiguation/1.2
     const grouped = new Map<string, { display: string; members: string[] }>();
     minimal.outcomes.forEach((outcome, i) => {
       const key = canonicalOutcome(outcome);
@@ -448,7 +452,7 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
   return blocked ? 1 : 0;
 }
 
-// @shall 6.4
+// @shall shall-language/6.4
 function cmdLint(file: string): number {
   const program = loadProgram(file);
   const warnings = lintVagueness(program);
@@ -508,6 +512,8 @@ async function cmdRun(file: string, flags: Flags): Promise<number> {
  * silently - which can change a verdict for a reason the user cannot see. Both
  * are surfaced here.
  */
+// @shall offline-replay/3.1
+// @shall offline-replay/3.2
 async function cmdDryRun(file: string, flags: Flags): Promise<number> {
   const program = loadProgram(file);
   const root = process.cwd();
@@ -588,6 +594,7 @@ async function cmdSuggest(file: string, flags: Flags): Promise<number> {
     maxOutputTokens: 600,
   });
 
+  // @shall disambiguation/2.4
   if (flags.apply !== undefined) {
     const chosen = suggestions[flags.apply - 1];
     if (!chosen) throw new CliError(`no reading ${flags.apply} - there are ${suggestions.length}`);

@@ -97,7 +97,7 @@ function engages(criterion: Criterion, probe: Probe, program: Program): boolean 
   return false;
 }
 
-// @shall 4.4
+// @shall shall-language/4.4
 export function attribute(
   program: Program,
   divergences: Divergence[],
@@ -185,7 +185,7 @@ export interface VaguenessWarning {
   why: string;
 }
 
-// @shall 4.3
+// @shall shall-language/4.3
 export function lintVagueness(program: Program): VaguenessWarning[] {
   const warnings: VaguenessWarning[] = [];
   for (const criterion of programCriteria(program)) {
@@ -223,6 +223,9 @@ export interface PairAttribution {
 
 const MAX_CLAUSES_FOR_PAIRS = 24;
 
+// @shall disambiguation/3.1
+// @shall disambiguation/3.2
+// @shall disambiguation/3.3
 export function attributePairs(
   program: Program,
   divergences: Divergence[],

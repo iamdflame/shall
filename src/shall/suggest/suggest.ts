@@ -80,6 +80,9 @@ export interface SuggestOptions {
 }
 
 /** One proposed rewrite per distinct reading, largest cohort first. */
+// @shall disambiguation/2.1
+// @shall disambiguation/2.2
+// @shall disambiguation/2.3
 export async function suggestRewrites(options: SuggestOptions): Promise<Suggestion[]> {
   const { program, criterion, groups, divergences, provider, model, maxOutputTokens } = options;
 

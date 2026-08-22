@@ -212,7 +212,7 @@ function baseline(fields: Field[], literals: number[]): Record<string, unknown> 
  * single-field edges reliably, and the random combinations catch interactions
  * between fields that single variation misses.
  */
-// @shall 6.1
+// @shall shall-language/6.1
 export function structuralProbes(program: Program, limit: number): Probe[] {
   const fields = program.interface.inputs;
   const literals = specLiterals(program);

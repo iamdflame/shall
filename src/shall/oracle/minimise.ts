@@ -110,6 +110,8 @@ function shrinkValue(value: unknown, type: ShallType): unknown[] {
  * reductions that only become possible after another field shrinks are still
  * found.
  */
+// @shall disambiguation/1.1
+// @shall disambiguation/1.3
 export function minimiseWitness(
   program: Program,
   probe: Probe,

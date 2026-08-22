@@ -75,7 +75,7 @@ export interface RunOptions {
   executionTimeoutMs: number;
 }
 
-// @shall 3.1
+// @shall shall-language/3.1
 export function runDifferential(
   sources: { modelId: string; label: string; source: string }[],
   options: RunOptions,
@@ -169,10 +169,10 @@ export function runDifferential(
  * specification - it is evidence about which reading is more popular, which is
  * exactly the thing a specification is supposed to settle.
  */
-// @shall 3.2
-// @shall 3.3
-// @shall 3.4
-// @shall 3.5
+// @shall shall-language/3.2
+// @shall shall-language/3.3
+// @shall shall-language/3.4
+// @shall shall-language/3.5
 export function buildVerdict(
   result: OracleResult,
   quorum: number,

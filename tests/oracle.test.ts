@@ -37,7 +37,7 @@ export function run({ subtotal, couponPercent }) {
   return Math.round((discounted * 1.08 + shipping) * 100) / 100;
 }`;
 
-// @shall 6.1
+// @shall shall-language/6.1
 test('structural probes are deterministic and respect the interface', () => {
   const a = structuralProbes(program, 96);
   const b = structuralProbes(program, 96);
@@ -50,7 +50,7 @@ test('structural probes are deterministic and respect the interface', () => {
   }
 });
 
-// @shall 3.2
+// @shall shall-language/3.2
 test('identical behaviour collapses to one group and builds', () => {
   const probes = structuralProbes(program, 96);
   const result = runDifferential(
@@ -66,8 +66,8 @@ test('identical behaviour collapses to one group and builds', () => {
   assert.equal(buildVerdict(result, 2).ok, true);
 });
 
-// @shall 3.1
-// @shall 3.3
+// @shall shall-language/3.1
+// @shall shall-language/3.3
 test('THE HEADLINE: an ambiguous spec splits the ensemble and fails the build', () => {
   const probes = structuralProbes(program, 96);
   const result = runDifferential(
@@ -93,7 +93,7 @@ test('THE HEADLINE: an ambiguous spec splits the ensemble and fails the build', 
   assert.notEqual(witness.readings[0].canonical, witness.readings[1].canonical);
 });
 
-// @shall 3.4
+// @shall shall-language/3.4
 test('a plurality does not rescue a split build', () => {
   const probes = structuralProbes(program, 96);
   const result = runDifferential(
@@ -141,7 +141,7 @@ test('a candidate that fails to load is excluded, not fatal', () => {
   assert.equal(buildVerdict(result, 2).ok, true);
 });
 
-// @shall 3.5
+// @shall shall-language/3.5
 test('below quorum, a build is refused even when survivors agree', () => {
   const probes = structuralProbes(program, 8);
   const result = runDifferential(

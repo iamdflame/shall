@@ -40,7 +40,7 @@ function tempDir(): string {
   return mkdtempSync(join(tmpdir(), 'shall-'));
 }
 
-// @shall 2.1
+// @shall shall-language/2.1
 test('every reader is asked a byte-identical question', async () => {
   const dir = tempDir();
   try {
@@ -57,7 +57,7 @@ test('every reader is asked a byte-identical question', async () => {
   }
 });
 
-// @shall 2.2
+// @shall shall-language/2.2
 test('no reader is told that other readers exist', () => {
   const text = COMPILER_INSTRUCTIONS.toLowerCase();
   for (const leak of ['other model', 'ensemble', 'compared', 'agree', 'consensus', 'another reader']) {
@@ -65,7 +65,7 @@ test('no reader is told that other readers exist', () => {
   }
 });
 
-// @shall 2.3
+// @shall shall-language/2.3
 test('a failing reader is recorded and the rest still compile', async () => {
   const dir = tempDir();
   try {
@@ -83,7 +83,7 @@ test('a failing reader is recorded and the rest still compile', async () => {
   }
 });
 
-// @shall 2.4
+// @shall shall-language/2.4
 test('an unchanged program reuses cached answers instead of paying again', async () => {
   const dir = tempDir();
   try {
@@ -127,7 +127,7 @@ test('a markdown fence around the module is stripped', () => {
   assert.equal(extractModule('export const run = () => 1;'), 'export const run = () => 1;');
 });
 
-// @shall 5.2
+// @shall shall-language/5.2
 test('an expectation only survives when independent readers propose the same value', async () => {
   const criteria = program.requirements.flatMap((r) => r.criteria).slice(0, 1);
   const jurors = [
@@ -155,7 +155,7 @@ test('an expectation only survives when independent readers propose the same val
   assert.ok(result.disputed.some((d) => d.input.text === 'x y'), 'the contested case is reported, not silently dropped');
 });
 
-// @shall 6.4
+// @shall shall-language/6.4
 test('open wording is found with no model and no API key', () => {
   const warnings = lintVagueness(program);
   assert.ok(warnings.length > 0);

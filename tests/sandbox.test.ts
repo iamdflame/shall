@@ -23,7 +23,7 @@ test('imports are refused — candidates must be self-contained', () => {
   assert.throws(() => loadCandidate('import fs from "fs";\nexport function run(){return 1;}'), LoadError);
 });
 
-// @shall 6.2
+// @shall shall-language/6.2
 test('the sandbox has no host globals', () => {
   for (const probe of ['process', 'require', 'fetch', 'globalThis.process']) {
     const c = loadCandidate(`export function run() { return typeof ${probe}; }`);
@@ -42,7 +42,7 @@ test('a runtime throw becomes an outcome, not an exception', () => {
   assert.match((out as { error: string }).error, /boom/);
 });
 
-// @shall 6.3
+// @shall shall-language/6.3
 test('an infinite loop is killed by the timeout', () => {
   const c = loadCandidate('export function run(){ while(true){} }');
   const out = c.run({}, 100);

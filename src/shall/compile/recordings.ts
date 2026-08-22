@@ -76,6 +76,7 @@ export function writeRecording(root: string, key: string, source: string): void 
 }
 
 /** Human summary of a program's recording, for the replay banner. */
+// @shall offline-replay/2.3
 export function describeRecording(
   manifest: Manifest,
   sourcePath: string,

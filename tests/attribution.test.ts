@@ -49,7 +49,7 @@ test('the top attribution is the clause that is actually ambiguous', () => {
   assert.match(top.vagueWhy ?? '', /original subtotal or the amount after adjustments/);
 });
 
-// @shall 4.4
+// @shall shall-language/4.4
 test('a clause engaged by everything is not ranked above the guilty one', () => {
   const { probes, oracle } = diverge();
   const results = attribute(program, oracle.divergences, probes);
@@ -87,7 +87,7 @@ test('every attribution carries countable evidence, not an assertion', () => {
   }
 });
 
-// @shall 4.3
+// @shall shall-language/4.3
 test('the vagueness lint finds open wording without running anything', () => {
   const warnings = lintVagueness(program);
   const terms = warnings.map((w) => w.term.toLowerCase());

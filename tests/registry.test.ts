@@ -22,6 +22,7 @@ function withEnv(vars: Record<string, string | undefined>, fn: () => void) {
   }
 }
 
+// @shall multi-vendor-ensemble/1.1
 test('every listed vendor has a base URL and a key variable', () => {
   for (const [name, v] of Object.entries(VENDORS)) {
     assert.ok(v.baseURL.startsWith('http'), `${name} needs a URL`);
@@ -30,6 +31,7 @@ test('every listed vendor has a base URL and a key variable', () => {
   assert.ok(Object.keys(VENDORS).length >= 5, 'the point is breadth of independence');
 });
 
+// @shall multi-vendor-ensemble/2.1
 test('a reader whose vendor has no key is dropped, not fatal', () => {
   withEnv({ OPENAI_API_KEY: 'x', ANTHROPIC_API_KEY: undefined, GEMINI_API_KEY: undefined }, () => {
     const registry = new ProviderRegistry();
@@ -43,6 +45,7 @@ test('a reader whose vendor has no key is dropped, not fatal', () => {
   });
 });
 
+// @shall multi-vendor-ensemble/2.2
 test('a single-vendor roster is flagged as such', () => {
   withEnv({ OPENAI_API_KEY: 'x', ANTHROPIC_API_KEY: undefined }, () => {
     const roster = resolveRoster(
@@ -54,6 +57,7 @@ test('a single-vendor roster is flagged as such', () => {
   });
 });
 
+// @shall multi-vendor-ensemble/2.3
 test('two vendors clear the single-vendor flag', () => {
   withEnv({ OPENAI_API_KEY: 'x', ANTHROPIC_API_KEY: 'y' }, () => {
     const roster = resolveRoster(
@@ -65,12 +69,14 @@ test('two vendors clear the single-vendor flag', () => {
   });
 });
 
+// @shall multi-vendor-ensemble/1.3
 test('an unknown vendor names the ones that exist', () => {
   const registry = new ProviderRegistry();
   assert.throws(() => registry.providerFor('nope'), /unknown vendor "nope"/);
   assert.throws(() => registry.providerFor('nope'), /openai/);
 });
 
+// @shall multi-vendor-ensemble/1.2
 test('configuredVendors reflects only keys actually present', () => {
   withEnv({ OPENAI_API_KEY: undefined, ANTHROPIC_API_KEY: 'y', GROQ_API_KEY: undefined }, () => {
     const vendors = new ProviderRegistry().configuredVendors();

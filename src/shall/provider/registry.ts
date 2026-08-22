@@ -24,6 +24,7 @@ export class ProviderRegistry implements Provider {
 
   providerFor(vendor: string): Provider {
     const provider = this.providers.get(vendor);
+    // @shall multi-vendor-ensemble/1.3
     if (!provider) {
       throw new ProviderError(
         `unknown vendor "${vendor}" - known vendors: openai, ${Object.keys(VENDORS).join(', ')}`,
@@ -52,6 +53,7 @@ export class ProviderRegistry implements Provider {
     return all.flat().sort();
   }
 
+  // @shall multi-vendor-ensemble/1.2
   async complete(model: CompilerModel, request: Parameters<Provider['complete']>[1]) {
     return this.providerFor(model.provider).complete(model, request);
   }
@@ -66,6 +68,8 @@ export class ProviderRegistry implements Provider {
  * convention is exactly how an ambiguous specification gets reported as
  * unanimous. The roster is therefore reported honestly rather than silently.
  */
+// @shall multi-vendor-ensemble/2.1
+// @shall multi-vendor-ensemble/2.3
 export function resolveRoster(
   ensemble: CompilerModel[],
   registry: ProviderRegistry,

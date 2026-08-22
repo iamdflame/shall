@@ -6,7 +6,7 @@ import { programCriteria, typeName } from '../dist/shall/lang/types.js';
 
 const SRC = readFileSync('examples/order-total.shall', 'utf8');
 
-// @shall 1.1
+// @shall shall-language/1.1
 test('parses a program declaration, description and interface', () => {
   const { program, diagnostics } = parseShall(SRC, 'examples/order-total.shall');
   assert.equal(hasFatal(diagnostics), false, JSON.stringify(diagnostics));
@@ -61,7 +61,7 @@ test('an unknown type is fatal and names the valid options', () => {
   assert.match(diagnostics[0].message, /unknown type "blob"/);
 });
 
-// @shall 1.2
+// @shall shall-language/1.2
 test('a program with no inputs is rejected — nothing could be tested', () => {
   const { diagnostics } = parseShall(
     'program P\ninterface\n  output y: string\nRequirement 1: R\n  THE SYSTEM SHALL do it\n',
@@ -70,7 +70,7 @@ test('a program with no inputs is rejected — nothing could be tested', () => {
   assert.ok(diagnostics.some((d) => d.fatal && /no inputs/.test(d.message)));
 });
 
-// @shall 1.3
+// @shall shall-language/1.3
 test('a program with two outputs is rejected — comparison needs one value', () => {
   const { diagnostics } = parseShall(
     'program P\ninterface\n  input x: integer\n  output a: string\n  output b: string\nRequirement 1: R\n  THE SYSTEM SHALL do it\n',
@@ -87,7 +87,7 @@ test('a program with no requirements has nothing to compile', () => {
   assert.ok(diagnostics.some((d) => d.fatal && /states no requirements/.test(d.message)));
 });
 
-// @shall 1.4
+// @shall shall-language/1.4
 test('a malformed criterion is reported but not fatal', () => {
   const { program, diagnostics } = parseShall(
     'program P\ninterface\n  input x: integer\n  output y: string\nRequirement 1: R\n  The system should probably work\n',

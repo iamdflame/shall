@@ -18,6 +18,7 @@ import { ProviderError } from './types.js';
  * The chat-completions endpoint is used rather than Responses, because that is
  * the surface compatible vendors actually implement.
  */
+// @shall multi-vendor-ensemble/1.1
 export class OpenAICompatibleProvider implements Provider {
   private client: OpenAI | null = null;
 

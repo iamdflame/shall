@@ -42,6 +42,8 @@ function split() {
   return { probes, oracle };
 }
 
+// @shall disambiguation/3.1
+// @shall disambiguation/3.2
 test('ordering ambiguity between two precise clauses is detected', () => {
   const { probes, oracle } = split();
   assert.ok(oracle.behaviourDivergences.length > 0, 'fixture must diverge');
@@ -80,6 +82,7 @@ test('no divergence means no pairs', () => {
   assert.deepEqual(attributePairs(program, oracle.behaviourDivergences, probes), []);
 });
 
+// @shall disambiguation/3.3
 test('pair search is skipped on specifications with too many clauses', () => {
   const many = ['program Big', '', 'interface', '  input x: integer', '  output y: integer', ''];
   for (let i = 1; i <= 30; i++) {

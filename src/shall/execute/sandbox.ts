@@ -45,7 +45,7 @@ function toScriptSource(moduleSource: string): string {
   return src;
 }
 
-// @shall 6.2
+// @shall shall-language/6.2
 /** Compiled once. Recompiling this on every call was wasted work. */
 const CALL = new Script('__run(__input)');
 
@@ -88,7 +88,7 @@ export function loadCandidate(moduleSource: string): LoadedCandidate {
           __run: fn,
           __input: structuredClone(input),
         });
-        // @shall 6.3
+        // @shall shall-language/6.3
         const value = CALL.runInContext(context, { timeout: timeoutMs });
         return { ok: true, value };
       } catch (err) {

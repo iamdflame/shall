@@ -80,8 +80,8 @@ function diagnostic(
   out.push(`      ${dim(attribution.evidence)}`);
   out.push('');
 
-  // @shall 4.1
-  // @shall 4.2
+  // @shall shall-language/4.1
+  // @shall shall-language/4.2
   if (witness) {
     const minimal = witness.minimalInput;
     out.push(`   ${bold('WITNESS')}  ${cyan(formatInput(minimal ?? witness.probe.input))}`);

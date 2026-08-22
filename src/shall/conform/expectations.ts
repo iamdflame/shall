@@ -145,8 +145,8 @@ export interface DeriveResult {
  * Ask several readers, independently, what each criterion requires, and keep
  * only the expectations they agree on.
  */
-// @shall 5.1
-// @shall 5.2
+// @shall shall-language/5.1
+// @shall shall-language/5.2
 export async function deriveExpectations(options: DeriveOptions): Promise<DeriveResult> {
   const { program, criteria, jurors, provider, maxOutputTokens, minAgreement, onProgress } = options;
 

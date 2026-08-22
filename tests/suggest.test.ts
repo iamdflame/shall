@@ -25,6 +25,7 @@ function split() {
   );
 }
 
+// @shall disambiguation/2.1
 test('one rewrite is proposed per distinct reading', async () => {
   const oracle = split();
   const seen: string[] = [];
@@ -47,6 +48,7 @@ test('one rewrite is proposed per distinct reading', async () => {
   assert.deepEqual(suggestions[1].readers, ['reader-b']);
 });
 
+// @shall disambiguation/2.2
 test('the example input and its output come from the same measurement', async () => {
   const oracle = split();
   const { loadCandidate } = await import('../dist/shall/execute/sandbox.js');
@@ -70,6 +72,7 @@ test('the example input and its output come from the same measurement', async ()
   }
 });
 
+// @shall disambiguation/2.3
 test('a failing proposal drops that reading rather than the whole run', async () => {
   const oracle = split();
   let calls = 0;
@@ -105,6 +108,7 @@ test('a model answer is cleaned to a single sentence', () => {
   assert.equal(cleanSentence('  \n  THE SYSTEM SHALL do it  '), 'THE SYSTEM SHALL do it');
 });
 
+// @shall disambiguation/2.4
 test('applying a rewrite preserves indentation and touches one line', () => {
   const before = program.source;
   const after = applyRewrite(before, criterion.line, 'THE SYSTEM SHALL count tokens');

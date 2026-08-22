@@ -83,7 +83,11 @@ function diagnostic(
   // @shall 4.1
   // @shall 4.2
   if (witness) {
-    out.push(`   ${bold('WITNESS')}  ${cyan(formatInput(witness.probe.input))}`);
+    const minimal = witness.minimalInput;
+    out.push(`   ${bold('WITNESS')}  ${cyan(formatInput(minimal ?? witness.probe.input))}`);
+    if (minimal) {
+      out.push(`   ${dim('  also')}  ${dim(formatInput(witness.probe.input))}`);
+    }
     // Structural probes describe themselves by their own input, which the line
     // above already shows; only a distinct rationale is worth a second line.
     const rationale = witness.probe.rationale;

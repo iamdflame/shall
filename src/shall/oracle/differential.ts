@@ -43,6 +43,13 @@ export interface Divergence {
    * clause that is already correct.
    */
   kind: 'behaviour' | 'numeric';
+  /**
+   * The smallest input that still splits the readers, when one was found.
+   *
+   * A compiler error points at the smallest thing that reproduces the problem.
+   * "a-b" proves a hyphen is undefined and leaves nothing else to blame.
+   */
+  minimalInput?: Record<string, unknown>;
 }
 
 export interface OracleResult {

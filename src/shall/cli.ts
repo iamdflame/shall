@@ -8,6 +8,7 @@ import { OpenAIProvider } from './provider/openai.js';
 import { compileEnsemble } from './compile/compiler.js';
 import { structuralProbes, parseGeneratedProbes, PROBE_INSTRUCTIONS } from './oracle/probes.js';
 import { runDifferential, buildVerdict } from './oracle/differential.js';
+import { minimiseWitness } from './oracle/minimise.js';
 import { attribute, lintVagueness } from './attribute/attribute.js';
 import { renderAmbiguity, renderSuccess, renderVaguenessOnly, renderConformance } from './report/terminal.js';
 import { deriveExpectations } from './conform/expectations.js';
@@ -233,6 +234,14 @@ async function analyse(file: string, flags: Flags) {
     probes,
     executionTimeoutMs: config.executionTimeoutMs,
   });
+
+  // Shrink each reported witness to the smallest input that still splits the
+  // readers. Probes are microseconds; this costs nothing and the output reads
+  // very differently when the witness has nothing spare in it.
+  for (const divergence of oracle.behaviourDivergences.slice(0, 3)) {
+    const minimal = minimiseWitness(program, divergence.probe, oracle.loadable, config.executionTimeoutMs);
+    if (minimal.smaller) divergence.minimalInput = minimal.input;
+  }
 
   const verdict = buildVerdict(oracle, config.quorum);
   const vagueness = lintVagueness(program);

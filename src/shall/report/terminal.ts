@@ -95,7 +95,7 @@ function diagnostic(
       out.push(`            ${dim(rationale)}`);
     }
     out.push('');
-    for (const reading of witness.readings) {
+    for (const reading of witness.minimalReadings ?? witness.readings) {
       const who = reading.members.join(', ');
       out.push(`     ${bold(reading.display.padEnd(16))} ${grey(who)}`);
     }
@@ -339,5 +339,53 @@ export function renderConformance(program: Program, report: ConformanceReport): 
     out.push('');
   }
 
+  return out.join('\n');
+}
+
+/* ── suggestions ─────────────────────────────────────────────────────────── */
+
+import type { Suggestion } from '../suggest/suggest.js';
+import type { Criterion } from '../../ears/types.js';
+
+/**
+ * Each behaviour group the readers formed is a coherent reading of the English.
+ * Presenting them side by side turns "this is ambiguous" into a decision the
+ * author can actually make, with the consequence of each choice made concrete.
+ */
+export function renderSuggestions(
+  program: Program,
+  criterion: Criterion,
+  suggestions: Suggestion[],
+): string {
+  const out: string[] = [];
+  out.push('');
+  out.push(`${bold('AMBIGUOUS')}  ${dim(`${program.path}:${criterion.line}`)}`);
+  out.push(dim(RULE));
+  out.push('');
+  out.push(`   ${grey('│')}  ${criterion.raw}`);
+  out.push('');
+  out.push(`  This clause splits the readers ${suggestions.length} ways. Each rewrite below would`);
+  out.push(`  compile. Pick the behaviour you meant.`);
+  out.push('');
+
+  suggestions.forEach((s, i) => {
+    out.push(dim(RULE));
+    out.push('');
+    out.push(
+      `  ${bold(`[${i + 1}]`)}  ${cyan(`${s.readers.length} reader${s.readers.length === 1 ? '' : 's'}`)}` +
+        `  ${dim(s.readers.join(', '))}`,
+    );
+    if (Object.keys(s.exampleInput).length > 0) {
+      out.push(`       ${dim(`${formatInput(s.exampleInput)}  ->  ${s.exampleOutput}`)}`);
+    }
+    out.push('');
+    out.push(`       ${s.rewrite}`);
+    out.push('');
+  });
+
+  out.push(dim(RULE));
+  out.push('');
+  out.push(`  ${dim(`shall suggest ${program.path} --apply <n>   writes it and re-checks`)}`);
+  out.push('');
   return out.join('\n');
 }

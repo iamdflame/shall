@@ -23,6 +23,14 @@ export interface Minimised {
   steps: number;
   /** True when the minimal witness differs from the one originally found. */
   smaller: boolean;
+  /**
+   * What each reader returns for `input`, in the order the sources were given.
+   *
+   * Returned alongside the input because they must be read together: pairing a
+   * shrunk witness with outputs measured on the original probe produces a
+   * report that is simply wrong.
+   */
+  outcomes: Outcome[];
 }
 
 type Runner = (input: Record<string, unknown>) => Outcome[];
@@ -120,7 +128,7 @@ export function minimiseWitness(
     .filter((c): c is NonNullable<typeof c> => c !== null);
 
   if (candidates.length < 2) {
-    return { input: probe.input, steps: 0, smaller: false };
+    return { input: probe.input, steps: 0, smaller: false, outcomes: [] };
   }
 
   const run: Runner = (input) => candidates.map((c) => c.run(input, timeoutMs));
@@ -146,5 +154,5 @@ export function minimiseWitness(
   }
 
   const smaller = JSON.stringify(current) !== JSON.stringify(probe.input);
-  return { input: current, steps, smaller };
+  return { input: current, steps, smaller, outcomes: run(current) };
 }

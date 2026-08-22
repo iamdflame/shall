@@ -10,8 +10,11 @@ import { compileEnsemble } from './compile/compiler.js';
 import { structuralProbes, parseGeneratedProbes, PROBE_INSTRUCTIONS } from './oracle/probes.js';
 import { runDifferential, buildVerdict } from './oracle/differential.js';
 import { minimiseWitness } from './oracle/minimise.js';
+import { canonical as canonicalOutcome, display as displayOutcome } from './execute/sandbox.js';
+import { suggestRewrites, applyRewrite } from './suggest/suggest.js';
+import { writeFileSync as writeFile } from 'node:fs';
 import { attribute, lintVagueness } from './attribute/attribute.js';
-import { renderAmbiguity, renderSuccess, renderVaguenessOnly, renderConformance } from './report/terminal.js';
+import { renderAmbiguity, renderSuccess, renderVaguenessOnly, renderConformance, renderSuggestions } from './report/terminal.js';
 import { deriveExpectations } from './conform/expectations.js';
 import { checkConformance, conformanceBlocks } from './conform/check.js';
 import { programCriteria } from './lang/types.js';
@@ -43,6 +46,8 @@ COMMANDS
   lint <file>     Static scan for open wording. No model calls, no API key.
   record <file>   Ask the readers for real and commit the result to recordings/
                   so anyone can replay the same run for free.
+  suggest <file>  Propose a rewrite for each reading the readers found, then
+                  verify the chosen one compiles. --apply <n> writes it.
   run <file>      Build (using cache) and execute against one input.
   verify          Check this repository against its own .kiro specification.
   models          List models this account can actually reach.
@@ -57,6 +62,7 @@ OPTIONS
   --probes <n>    Structural probe count (default from config).
   --out <path>    Output path for 'build'.
   --json          Machine-readable result.
+  --apply <n>     With 'suggest': write reading <n> into the file and re-check.
   --update        Record the current state as the drift baseline ('verify').
 
 EXIT CODES
@@ -77,6 +83,7 @@ interface Flags {
   probes?: number;
   out?: string;
   input?: string;
+  apply?: number;
 }
 
 function parseFlags(argv: string[]): Flags {
@@ -97,6 +104,7 @@ function parseFlags(argv: string[]): Flags {
     ...(probes ? { probes: Number(probes) } : {}),
     ...(value('--out') ? { out: value('--out') } : {}),
     ...(value('--input') ? { input: value('--input') } : {}),
+    ...(value('--apply') ? { apply: Number(value('--apply')) } : {}),
   };
 }
 
@@ -256,7 +264,22 @@ async function analyse(file: string, flags: Flags) {
   // very differently when the witness has nothing spare in it.
   for (const divergence of oracle.behaviourDivergences.slice(0, 3)) {
     const minimal = minimiseWitness(program, divergence.probe, oracle.loadable, config.executionTimeoutMs);
-    if (minimal.smaller) divergence.minimalInput = minimal.input;
+    if (!minimal.smaller) continue;
+    divergence.minimalInput = minimal.input;
+
+    // Re-group the readers by what they return for the SHRUNK input. Reusing
+    // the probe's readings here would pair an input with outputs measured
+    // somewhere else, which is a report that is simply wrong.
+    const grouped = new Map<string, { display: string; members: string[] }>();
+    minimal.outcomes.forEach((outcome, i) => {
+      const key = canonicalOutcome(outcome);
+      const entry = grouped.get(key) ?? { display: displayOutcome(outcome), members: [] };
+      entry.members.push(oracle.loadable[i]!.label);
+      grouped.set(key, entry);
+    });
+    divergence.minimalReadings = [...grouped.entries()]
+      .map(([canonical, v]) => ({ canonical, ...v }))
+      .sort((a, b) => b.members.length - a.members.length);
   }
 
   const verdict = buildVerdict(oracle, config.quorum);
@@ -455,6 +478,59 @@ async function cmdRun(file: string, flags: Flags): Promise<number> {
  * the test suite decides whether those claims still hold. A specification
  * nothing verifies is a wish.
  */
+/**
+ * Propose a disambiguating rewrite for each reading the readers produced.
+ *
+ * The proposal is a model call and is untrusted. The verification that it works
+ * is the existing deterministic oracle - so `--apply` writes the sentence and
+ * immediately re-runs the check, and reports what actually happened rather than
+ * what was hoped for.
+ */
+async function cmdSuggest(file: string, flags: Flags): Promise<number> {
+  const { program, config, oracle, verdict, attributions } = await analyse(file, flags);
+
+  if (verdict.ok) {
+    process.stdout.write(`\n  ${program.name} is already unambiguous - nothing to suggest.\n\n`);
+    return 0;
+  }
+  const target = attributions[0];
+  if (!target) {
+    throw new CliError('the readers disagreed, but no single clause is responsible - nothing to rewrite', 1);
+  }
+
+  const provider = new ProviderRegistry();
+  if (!provider.isConfigured()) {
+    throw new CliError('proposing a rewrite needs a model key; the check itself does not');
+  }
+
+  process.stderr.write(`  proposing rewrites for ${oracle.groups.length} readings...\n`);
+  const suggestions = await suggestRewrites({
+    program,
+    criterion: target.criterion,
+    groups: oracle.groups,
+    divergences: oracle.behaviourDivergences,
+    provider,
+    model: config.ensemble[0]!,
+    maxOutputTokens: 600,
+  });
+
+  if (flags.apply !== undefined) {
+    const chosen = suggestions[flags.apply - 1];
+    if (!chosen) throw new CliError(`no reading ${flags.apply} - there are ${suggestions.length}`);
+
+    const updated = applyRewrite(program.source, target.criterion.line, chosen.rewrite);
+    writeFile(resolve(file), updated, 'utf8');
+    process.stdout.write(`\n  wrote reading ${flags.apply} into ${file}:${target.criterion.line}\n`);
+    process.stdout.write(`    ${chosen.rewrite}\n\n  re-checking...\n`);
+
+    // The proposal was untrusted; this is the part that is not.
+    return cmdBuild(file, { ...flags, apply: undefined, live: true }, false);
+  }
+
+  process.stdout.write(renderSuggestions(program, target.criterion, suggestions));
+  return 1;
+}
+
 async function cmdVerify(flags: Flags): Promise<number> {
   const root = process.cwd();
   const kiroDir = join(root, '.kiro');
@@ -524,6 +600,7 @@ async function main(): Promise<void> {
       case 'build':  process.exitCode = await cmdBuild(file, flags, true); break;
       case 'check':  process.exitCode = await cmdBuild(file, flags, false); break;
       case 'lint':   process.exitCode = cmdLint(file); break;
+      case 'suggest': process.exitCode = await cmdSuggest(file, flags); break;
       case 'record': process.exitCode = await cmdBuild(file, { ...flags, live: true, record: true }, false); break;
       case 'run':    process.exitCode = await cmdRun(file, flags); break;
       case 'verify': process.exitCode = await cmdVerify(flags); break;

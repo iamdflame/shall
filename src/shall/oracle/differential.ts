@@ -50,6 +50,8 @@ export interface Divergence {
    * "a-b" proves a hyphen is undefined and leaves nothing else to blame.
    */
   minimalInput?: Record<string, unknown>;
+  /** Readings measured AT `minimalInput`, never carried over from the probe. */
+  minimalReadings?: { canonical: string; display: string; members: string[] }[];
 }
 
 export interface OracleResult {

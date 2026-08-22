@@ -238,6 +238,42 @@
       Your prompt is now just a green <code>$</code>.</li>
 </ol>
 
+<h3>Install the <code>shall</code> command</h3>
+<p class="muted">
+  Typing <code>shall check ...</code> on camera looks far better than
+  <code>node dist/shall/cli.js check ...</code>. This puts it on your PATH and
+  needs no <code>sudo</code>.
+</p>
+
+<pre>cd ~/Pictures/rya
+npm run build
+npm run install-cli</pre>
+
+<p>Check it worked. You should see the help text:</p>
+<pre>shall help</pre>
+
+<div class="warnbox">
+  <strong>Do not use <code>npm link</code>.</strong>
+  On most Linux installs it writes to a system folder and fails with a
+  permissions error. <code>npm run install-cli</code> writes a small wrapper into
+  <code>~/.local/bin</code> instead, which is already on your PATH.
+</div>
+
+<h3>Silence your terminal's startup errors</h3>
+<p class="muted">
+  Your <code>~/.profile</code> currently points at a <code>dfx</code> install
+  that is no longer there, so every new terminal prints two red errors. They
+  would appear at the top of your recording. This guards those lines so they only
+  run if the files exist:
+</p>
+
+<pre>sed -i 's|^\. "$HOME/.local/share/dfx/env"$|[ -f "$HOME/.local/share/dfx/env" ] \&\& . "$HOME/.local/share/dfx/env"|' ~/.profile
+sed -i 's|^\. "$XDG_DATA_HOME/dfx/env"$|[ -n "$XDG_DATA_HOME" ] \&\& [ -f "$XDG_DATA_HOME/dfx/env" ] \&\& . "$XDG_DATA_HOME/dfx/env"|' ~/.profile</pre>
+
+<p class="muted">
+  Then close the terminal and open a new one. It should start clean.
+</p>
+
 <h3>Warm everything up</h3>
 <p class="muted">
   Run each command once now. The first run of anything is always slower, and you
@@ -246,10 +282,10 @@
 
 <pre><span class="c"># in the shall folder</span>
 cd ~/Pictures/rya
-npm install &amp;&amp; npm run build
 npm test
 npm run findings
-npm run verify</pre>
+npm run verify
+shall check examples/word-count.shall</pre>
 
 <div class="note">
   <strong>Everything below runs with no API key.</strong>
@@ -512,8 +548,8 @@ Recording quality: High Quality, Medium File Size</pre></li>
 
 <div class="note">
   <strong>The exact commands, ready to copy.</strong>
-  <pre>node dist/shall/cli.js check examples/word-count.shall
-node dist/shall/cli.js check examples/word-count.fixed.shall
+  <pre>shall check examples/word-count.shall
+shall check examples/word-count.fixed.shall
 npm run verify
 npm run findings</pre>
 </div>

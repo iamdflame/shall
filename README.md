@@ -18,7 +18,9 @@ that is a compile error — and it points at the sentence.*
 ```bash
 git clone https://github.com/iamdflame/shall && cd shall
 npm install && npm run build
-node dist/shall/cli.js check examples/word-count.shall
+npm run install-cli          # puts `shall` on your PATH, no sudo needed
+
+shall check examples/word-count.shall
 ```
 
 ```console
@@ -80,7 +82,7 @@ separates words.
 ```
 
 ```console
-$ node dist/shall/cli.js check examples/word-count.fixed.shall
+$ shall check examples/word-count.fixed.shall
 
 UNAMBIGUOUS  WordCount
 ──────────────────────────────────────────────────────────────────
@@ -199,8 +201,8 @@ recorded for them:
 
 ```bash
 echo 'OPENAI_API_KEY=sk-...' > .env      # git-ignored; the CLI loads it
-node dist/shall/cli.js check my-spec.shall
-node dist/shall/cli.js record my-spec.shall   # commit it so others replay free
+shall check my-spec.shall
+shall record my-spec.shall   # commit it so others replay free
 ```
 
 ## Commands

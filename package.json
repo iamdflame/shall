@@ -18,7 +18,8 @@
     "shall": "node dist/shall/cli.js",
     "verify": "node dist/shall/cli.js verify",
     "findings": "node scripts/findings.mjs",
-    "record": "node dist/shall/cli.js record"
+    "record": "node dist/shall/cli.js record",
+    "install-cli": "bash scripts/install-cli.sh"
   },
   "keywords": [
     "spec-driven-development",

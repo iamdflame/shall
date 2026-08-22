@@ -74,3 +74,21 @@
 - [ ] 8.3 Richer interface types: records, optional fields
 - [ ] 8.4 Suggest a disambiguating rewrite alongside the diagnostic
 - [ ] 8.5 GitHub Action publishing the ambiguity report on a pull request
+
+## Phase 8 — Reproducibility and disambiguation
+
+- [x] 8.1 Commit recorded ensembles; replay by default — _offline-replay 1, 2_
+- [x] 8.2 `shall record`, and `--live` to re-ask — _offline-replay 1.3, 2.1_
+- [x] 8.3 `npm run findings` reproduces every finding offline
+- [x] 8.4 Cost preflight with reachability — _offline-replay 3_
+- [x] 8.5 OpenAI-compatible provider for any vendor — _multi-vendor 1_
+- [x] 8.6 Drop unreachable readers; flag a single-vendor roster — _multi-vendor 2_
+- [x] 8.7 Witness minimisation — _disambiguation 1_
+- [x] 8.8 `shall suggest` and `--apply` — _disambiguation 2_
+- [x] 8.9 Pair attribution for clause interactions — _disambiguation 3_
+- [x] 8.10 Fix: vm context reused across probes (state leaked between calls)
+- [x] 8.11 Fix: float noise reported as ambiguity
+- [x] 8.12 Fix: minimal witness paired with outputs from the original probe
+- [x] 8.13 Fix: stacked annotations bound only the last criterion
+- [x] 8.14 Fix: list inputs were probed without repetition or varied length
+- [x] 8.15 CI, and a pull-request gate on changed specifications

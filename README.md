@@ -38,7 +38,8 @@ AMBIGUOUS SPECIFICATION  WordCount
       split — hyphens, apostrophes and digits are all conventions
       engaged by 7/7 disagreeing inputs but only 15/16 agreeing ones
 
-   WITNESS  text = "well-known state-of-the-art"
+   WITNESS  text = "a-a"
+     also  text = "well-known state-of-the-art"
 
      5    gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra
      2    gpt-4o, gpt-5.6-luna
@@ -187,9 +188,9 @@ Node 20+. One runtime dependency.
 ```bash
 npm install && npm run build
 
-npm test          # 112 tests
+npm test          # 145 tests
 npm run findings  # reproduce all three findings, no API key
-npm run verify    # this repo against its own .kiro spec — 25/25
+npm run verify    # this repo against its own .kiro spec — 50/50
 ```
 
 To run against **your own** specifications you need a key, since nothing is
@@ -209,6 +210,7 @@ node dist/shall/cli.js record my-spec.shall   # commit it so others replay free
 | `shall check <f>` | Same analysis, emits nothing. For CI. |
 | `shall lint <f>` | Static scan for open wording. **No model calls, no API key.** |
 | `shall record <f>` | Ask the readers for real and commit the result to `recordings/`. |
+| `shall suggest <f>` | Propose a rewrite for each reading; `--apply <n>` writes it and re-checks. |
 | `shall run <f> --input '{…}'` | Build from cache and execute one input. |
 | `shall verify` | Check this repository against its own `.kiro` specification. |
 | `shall models` | List the models your account can actually reach. |
@@ -216,6 +218,7 @@ node dist/shall/cli.js record my-spec.shall   # commit it so others replay free
 | Flag | Effect |
 |---|---|
 | `--live` | Re-ask every reader for real. Costs money. |
+| `--dry-run` | Show what a run would cost and which readers are reachable. |
 | `--offline` | Never call a model, even if nothing is recorded. |
 | `--no-conform` | Consensus only, skip the conformance pass. |
 | `--no-cache` | Re-ask every reader. |
@@ -285,6 +288,51 @@ deliberately **not** absorbed into this class: `big - big*p` produces genuinely
 different numbers relative to a tiny result, and calling that equivalent would
 be the tool lying.
 
+## Ending in a decision, not a complaint
+
+A report that says "this is ambiguous" leaves the author to guess which of
+several behaviours they meant. Each behaviour group the readers formed *is* a
+coherent reading, so each one can be offered as a sentence:
+
+```console
+$ shall suggest examples/word-count.shall
+
+  This clause splits the readers 3 ways. Each rewrite below would compile.
+
+  [1]  4 readers  gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra
+       text = "a-a"  ->  0
+       <a rewrite that pins this reading>
+
+  [2]  1 reader   gpt-4o
+       text = "a-a"  ->  1
+       <a rewrite that pins the other>
+
+$ shall suggest examples/word-count.shall --apply 1
+  wrote reading 1 into examples/word-count.shall:10
+  re-checking...
+```
+
+The rewrite is a model call and is untrusted. The check that it works is the
+deterministic oracle. Suggestion is cheap and fallible; proof is not.
+
+**Witnesses are minimised first.** `"well-known state-of-the-art"` proves the
+readers disagree; `"a-a"` proves it with nothing else in the input to blame.
+Deletion alone gets stuck at `"ell-kno"` — short but still full of irrelevant
+detail — so characters are simplified as well as deleted.
+
+**When no single clause is responsible, pairs are checked.** Ambiguity often
+lives *between* two precise sentences rather than inside one vague one:
+
+```
+  No single clause is responsible - these two interact
+      engaged together by 8/8 disagreeing inputs but only 47/88 agreeing ones
+
+   fee.shall:9   THE SYSTEM SHALL reduce the amount by the discountPercent
+   fee.shall:12  IF the amount is below 50 THEN the system SHALL add a fee of 6
+
+   Neither says which applies first.
+```
+
 ## Design decisions worth knowing
 
 **The prompt's most important property is what it omits.** It never tells a
@@ -344,10 +392,10 @@ $ npm run verify
 shall verify - this repository against its own specification
 ----------------------------------------------------------------
 
-  CONFORMANCE  100.0%  25/25 criteria proven
+  CONFORMANCE  100.0%  50/50 criteria proven
   ████████████████████████████████████████████████
 
-  + 25 conformant
+  + 50 conformant
 ```
 
 ---
@@ -358,8 +406,12 @@ Stated plainly, because a tool about under-specification should not be
 under-specified itself.
 
 - **Same-vendor readers share blind spots.** The roster spans generations, which
-  is better than sizes, but a second vendor would be better than both. Absence of
-  divergence is weaker evidence than its presence.
+  is better than sizes, but a second vendor would be better than both. Any vendor
+  with an OpenAI-compatible endpoint now works — set `ANTHROPIC_API_KEY`,
+  `GEMINI_API_KEY`, `GROQ_API_KEY` and the roster widens — and the CLI says so
+  whenever every reachable reader comes from one vendor. **The cross-vendor delta
+  is not yet measured**, and that measurement would be the most valuable finding
+  this project could produce.
 - **Consensus is not proof of correctness.** The conformance pass narrows this
   but relies on model-derived expectations, filtered by agreement. A clause all
   readers misread the same way is reported as satisfied.
@@ -392,14 +444,14 @@ src/{binding,verify,lock,report}/   the engine behind `shall verify`
 examples/      .shall programs, each with an ambiguous and a fixed version
 recordings/    committed ensemble outputs, so every example replays for free
 scripts/       findings.mjs — reproduces all three findings offline
-tests/         112 tests, TAP
+tests/         145 tests, TAP
 .kiro/         the specification this repository is verified against
 ```
 
-112 tests · 25/25 criteria proven · 42 recorded readers · one runtime dependency.
+145 tests · 50/50 criteria proven · 47 recorded readers · one runtime dependency.
 
-This repository has one commit. [`PROVENANCE.md`](PROVENANCE.md) explains why,
-and what evidence exists in place of a history.
+[`PROVENANCE.md`](PROVENANCE.md) records honestly how this repository was built,
+including that the first commit contained the whole initial project.
 
 ## License
 

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="SHALL">
+  <title>SHALL</title>
+  <!--
+    A sentence, with a squiggle under it.
+
+    A wavy underline is the one mark every reader already understands as "there
+    is something wrong with this word" - spellcheckers and compilers have taught
+    it for decades. SHALL puts one under English, so the mark is the product.
+
+    Straight bar and three humps only: no detail below the stroke weight, which
+    is what lets it survive at 16 pixels.
+  -->
+  <g fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round">
+    <path d="M 8 20 H 56"/>
+    <path d="M 10 40 q 7 -13 14 0 t 14 0 t 12 0"/>
+  </g>
+</svg>

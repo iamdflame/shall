@@ -469,8 +469,8 @@ shall check examples/word-count.shall</pre>
       your English means, that is a compile error. SHALL.
     </p>
     <p class="onscreen">
-      <b>On screen:</b> the project name, the GitHub URL, and
-      <code>github.com/iamdflame/shall</code> held for three seconds.
+      <b>On screen:</b> <code>assets/endcard.png</code>, held to the end of the
+      voiceover and about two seconds beyond it.
     </p>
   </div>
 
@@ -578,7 +578,7 @@ Recording quality: High Quality, Medium File Size</pre></li>
     <tr><td class="t">clip-4</td><td><code>git diff</code> of the fixed file, then <code>shall check examples/word-count.fixed.shall</code>.</td><td>~15 s</td></tr>
     <tr><td class="t">clip-5</td><td><code>npm run kiro</code> then <code>npm run verify</code>.</td><td>~25 s</td></tr>
     <tr><td class="t">clip-6</td><td><code>npm run findings</code>. Runs about 15 s and prints progress throughout.</td><td>~15 s</td></tr>
-    <tr><td class="t">clip-7</td><td>A plain terminal showing the repo URL, or a simple title card.</td><td>~8 s</td></tr>
+    <tr><td class="t">clip-7</td><td>Nothing to record — use <code>assets/endcard.png</code>.</td><td>~5 s</td></tr>
   </tbody>
 </table>
 </div>
@@ -629,7 +629,7 @@ npm run findings</pre>
 <ul class="checklist">
   <li>Add a <em>Zoom</em> effect on clip-3 slowly pushing into the underlined word. Effects → search “Transform” → animate Size from 100 % to 140 %.</li>
   <li>Add a half-second black fade at the very start and very end (Transitions → Fade from black / Fade to black).</li>
-  <li>Put a title card on clip-7: <em>Project</em> → <em>Add Title Clip</em>. Two lines only — <strong>SHALL</strong> and <code>github.com/iamdflame/shall</code>.</li>
+  <li>Do <strong>not</strong> build a title card by hand. Drag <code>assets/endcard.png</code> onto the timeline as clip-7 and set its duration to 5 seconds. It is already 1920×1080 with the logo, the tagline and the repository URL.</li>
   <li>No background music. It competes with the narration and adds nothing here.</li>
 </ul>
 
@@ -642,7 +642,7 @@ npm run findings</pre>
   <li>Watch the whole thing back before uploading. All of it.</li>
 </ol>
 
-<h2><span class="num">6</span> Upload and submit</h2>
+<h2><span class="num">6</span> Upload</h2>
 
 <ol class="steps">
   <li>Go to YouTube → <strong>Create</strong> → <strong>Upload video</strong>.</li>
@@ -653,7 +653,71 @@ npm run findings</pre>
       <code>github.com/iamdflame/shall</code>.</li>
 </ol>
 
-<h2><span class="num">7</span> Final checks</h2>
+<h2><span class="num">7</span> The YouTube listing</h2>
+
+<h3>Thumbnail</h3>
+<p>
+  Upload <code>assets/youtube-thumbnail.png</code> — already 1280×720, already
+  under the 2&nbsp;MB limit. It was checked at 360&nbsp;px, which is the size it
+  actually appears at in a feed: the headline stays legible and the coral line
+  is what catches the eye. Everything below it is texture, on purpose.
+</p>
+<p class="muted">
+  In the upload screen: <em>Details</em> → <em>Thumbnail</em> → <em>Upload file</em>.
+  You may need to verify your YouTube account before custom thumbnails are allowed.
+</p>
+
+<h3>Title</h3>
+<p class="muted">Under 70 characters so it does not truncate in search:</p>
+<pre>SHALL — six AI models read one spec and wrote three programs</pre>
+
+<h3>Description</h3>
+<p class="muted">Paste this whole block. The first two lines are what shows before &ldquo;more&rdquo;.</p>
+<pre>A language whose source code is English. When independent readers
+disagree about what your specification means, that is a compile error.
+
+Six models — gpt-4o through gpt-5.6 — were each given the same two-sentence
+specification and asked to implement it. None was told the others existed.
+They returned three behaviourally different programs, because nothing in
+the English said whether a hyphen separates words.
+
+SHALL finds that automatically: it compiles a specification with an ensemble
+of independent readers, executes every program they write against the same
+inputs, and rejects the build when they disagree — pointing at the sentence
+responsible and the smallest input that proves it.
+
+Built with Kiro for the Ready, Spec, Ship hackathon.
+50 acceptance criteria across four Kiro specs, each bound to the code that
+implements it and the test that proves it. 146 tests. One dependency.
+
+Code:  https://github.com/iamdflame/shall
+Every example replays from committed recordings, so you can reproduce
+everything in this video without an API key:
+
+  git clone https://github.com/iamdflame/shall &amp;&amp; cd shall
+  npm install &amp;&amp; npm run build &amp;&amp; npm run install-cli
+  shall check examples/word-count.shall
+  npm run findings
+
+00:00  The specification
+00:20  Six readers, three programs
+00:52  The smallest input that proves it
+01:22  The fix is one sentence
+01:50  Kiro: 50/50 criteria verified
+02:14  Reproducing the findings
+02:46  Close
+
+#hackathon #kiro #ai #softwareengineering #specifications</pre>
+
+<h3>Other fields</h3>
+<ul class="checklist">
+  <li>Visibility: <strong>Unlisted</strong> — accepted by the rules and safer than public.</li>
+  <li>Audience: <strong>Not made for kids</strong>.</li>
+  <li>Category: <strong>Science &amp; Technology</strong>.</li>
+  <li>Leave comments on — a judge may ask something.</li>
+</ul>
+
+<h2><span class="num">8</span> Final checks</h2>
 
 <ul class="checklist">
   <li>The repository is <strong>public</strong> — a judge in a private window can open it.</li>

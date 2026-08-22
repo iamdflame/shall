@@ -1,6 +1,9 @@
 <div align="center">
 
-# SHALL
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
+  <img src="assets/logo-light.png" alt="SHALL" width="420">
+</picture>
 
 **A language whose source code is English.**
 
@@ -456,6 +459,29 @@ tests/         145 tests, TAP
 
 [`PROVENANCE.md`](PROVENANCE.md) records honestly how this repository was built,
 including that the first commit contained the whole initial project.
+
+## Brand assets
+
+| File | Use |
+|---|---|
+| [`assets/logo-mark.svg`](assets/logo-mark.svg) | The mark alone. Scalable, `currentColor`, safe at 16px. |
+| [`assets/logo-dark.png`](assets/logo-dark.png) · [`logo-light.png`](assets/logo-light.png) | Full lockup, transparent background. |
+| [`assets/endcard.png`](assets/endcard.png) | 1920×1080 end card for the demo video. |
+| [`assets/youtube-thumbnail.png`](assets/youtube-thumbnail.png) | 1280×720 video thumbnail. |
+
+The mark is a sentence with a squiggle under it. A wavy underline is the one
+notation every reader already understands as *something is wrong with this
+word* — spellcheckers and compilers have taught it for decades. SHALL puts one
+under English, so the mark is simply the product.
+
+Each `.png` is generated from the `.html` beside it, so regenerating after a
+change is a screenshot rather than a redraw:
+
+```bash
+google-chrome --headless --screenshot=assets/endcard.png \
+  --window-size=1920,1080 --hide-scrollbars --virtual-time-budget=5000 \
+  assets/endcard.html
+```
 
 ## License
 

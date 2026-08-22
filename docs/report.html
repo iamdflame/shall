@@ -260,7 +260,7 @@
 
   <header class="masthead">
     <div class="wordmark">shall</div>
-    <div class="runline">6 readers &middot; gpt-4o &rarr; gpt-5.6 &middot; 25/25 self-verified</div>
+    <div class="runline">6 readers &middot; gpt-4o &rarr; gpt-5.6 &middot; 50/50 self-verified</div>
   </header>
 
   <section class="thesis">
@@ -508,6 +508,41 @@
   </section>
 
   <section class="section">
+    <h2>The smallest thing that reproduces it</h2>
+    <p class="section-note">
+      A compiler error points at the smallest input that reproduces the problem.
+      <code>"well-known state-of-the-art"</code> proves the readers disagree;
+      <code>"a-a"</code> proves it and leaves nothing else in the input to blame.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="ord">&darr;</div>
+        <div>
+          <h3>Deleting is not enough &mdash; characters have to be simplified too</h3>
+          <p>Greedy deletion alone gets stuck at <code>"ell-kno"</code>: short, but
+          still full of detail that has nothing to do with the split. Flattening
+          every alphanumeric to a single letter leaves only the structure that
+          actually causes it. Probes are microseconds, so several hundred shrink
+          steps per disagreement cost nothing measurable.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="ord">&harr;</div>
+        <div>
+          <h3>And when no single clause is guilty, pairs are checked</h3>
+          <p>Ambiguity often lives between two precise sentences rather than inside
+          one vague one. Two rules, each unambiguous alone, silent about which applies
+          first &mdash; reported as the pair, with the share of disagreements they
+          jointly account for. &ldquo;Neither says which applies first&rdquo; is a
+          sentence an author can act on; &ldquo;no single clause is responsible&rdquo;
+          is not.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
     <h2>The fix is a sentence</h2>
     <p class="section-note">
       The compiler does not repair the code. It names the words that failed, and
@@ -547,7 +582,8 @@
       text is split - hyphens, apostrophes and digits are all
       conventions</span>
 
-   <span style="font-weight:600">WITNESS</span>  text = "well-known state-of-the-art"
+   <span style="font-weight:600">WITNESS</span>  text = "a-a"
+     <span class="c-dim">also</span>  text = "well-known state-of-the-art"
 
      <span style="font-weight:600">5</span>   <span class="c-dim">gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra</span>
      <span style="font-weight:600">2</span>   <span class="c-dim">gpt-4o, gpt-5.6-luna</span>
@@ -559,8 +595,8 @@
   <footer>
     <div class="stats">
       <span><b>6</b> readers</span>
-      <span><b>104</b> tests</span>
-      <span><b>25/25</b> criteria self-verified</span>
+      <span><b>145</b> tests</span>
+      <span><b>50/50</b> criteria self-verified</span>
       <span><b>1</b> runtime dependency</span>
     </div>
     <div>every figure on this page is from a real run</div>

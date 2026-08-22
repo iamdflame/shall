@@ -62,6 +62,7 @@ OPTIONS
   --probes <n>    Structural probe count (default from config).
   --out <path>    Output path for 'build'.
   --json          Machine-readable result.
+  --dry-run       Show what a run would cost and which readers are reachable.
   --apply <n>     With 'suggest': write reading <n> into the file and re-check.
   --update        Record the current state as the drift baseline ('verify').
 
@@ -75,6 +76,7 @@ interface Flags {
   offline: boolean;
   live: boolean;
   record: boolean;
+  dryRun: boolean;
   update: boolean;
   verbose: boolean;
   noConform: boolean;
@@ -95,6 +97,7 @@ function parseFlags(argv: string[]): Flags {
   return {
     offline: argv.includes('--offline'),
     live: argv.includes('--live'),
+    dryRun: argv.includes('--dry-run'),
     record: argv.includes('--record'),
     update: argv.includes('--update'),
     verbose: argv.includes('--verbose') || argv.includes('-v'),
@@ -497,6 +500,66 @@ async function cmdRun(file: string, flags: Flags): Promise<number> {
  * immediately re-runs the check, and reports what actually happened rather than
  * what was hoped for.
  */
+/**
+ * What a run would cost, before it costs it.
+ *
+ * A reader running `check` for the first time has no idea what they are about
+ * to spend, and an unreachable model currently degrades into a smaller quorum
+ * silently - which can change a verdict for a reason the user cannot see. Both
+ * are surfaced here.
+ */
+async function cmdDryRun(file: string, flags: Flags): Promise<number> {
+  const program = loadProgram(file);
+  const root = process.cwd();
+  const config = loadShallConfig(root);
+  const registry = new ProviderRegistry();
+  const roster = resolveRoster(config.ensemble, registry);
+
+  const compilerInput = buildCompilerInput(program);
+  const recorded = config.ensemble.filter(
+    (m) => readRecording(root, recordingKeyFor(compilerInput, m.id)) !== null,
+  );
+
+  // A rough token estimate: every reader receives the same input, and emits a
+  // module of roughly the size the examples produce.
+  const inputTokens = Math.ceil(compilerInput.length / 4) + 220;
+  const outputTokens = 700;
+  const readersToAsk = flags.live ? roster.usable.length : roster.usable.length - recorded.length;
+  const willAsk = Math.max(0, readersToAsk);
+
+  const out: string[] = [''];
+  out.push(`  ${program.name}  ${file}`);
+  out.push('');
+  out.push(`  ensemble       ${config.ensemble.length} readers across ${new Set(config.ensemble.map((m) => m.provider)).size} vendor(s)`);
+  out.push(`  reachable      ${roster.usable.length} (${roster.vendors.join(', ') || 'none - no key set'})`);
+  if (roster.dropped.length > 0) {
+    out.push(`  unreachable    ${roster.dropped.map((m) => m.label).join(', ')}`);
+  }
+  out.push(`  recorded       ${recorded.length}/${config.ensemble.length} replay free`);
+  out.push(`  probes         ${config.probeCount} structural (free)`);
+  out.push('');
+  if (willAsk === 0) {
+    out.push(`  this run costs nothing - every reader replays from recordings/`);
+  } else {
+    const totalIn = willAsk * inputTokens;
+    const totalOut = willAsk * outputTokens;
+    out.push(`  would ask      ${willAsk} reader(s)`);
+    out.push(`  estimated      ~${totalIn.toLocaleString()} input + ~${totalOut.toLocaleString()} output tokens`);
+    out.push(`  ${dimText('a rough estimate from input length; actual usage is reported after a real run')}`);
+  }
+  if (roster.singleVendor && roster.usable.length > 1) {
+    out.push('');
+    out.push(`  note           all reachable readers are ${roster.vendors[0]} - same-vendor readers share blind spots`);
+  }
+  out.push('');
+  process.stdout.write(out.join('\n'));
+  return 0;
+}
+
+function dimText(s: string): string {
+  return process.env.NO_COLOR ? s : `\x1b[2m${s}\x1b[0m`;
+}
+
 async function cmdSuggest(file: string, flags: Flags): Promise<number> {
   const { program, config, oracle, verdict, attributions } = await analyse(file, flags);
 
@@ -608,8 +671,12 @@ async function main(): Promise<void> {
 
   try {
     switch (command) {
-      case 'build':  process.exitCode = await cmdBuild(file, flags, true); break;
-      case 'check':  process.exitCode = await cmdBuild(file, flags, false); break;
+      case 'build':  process.exitCode = flags.dryRun
+        ? await cmdDryRun(file, flags)
+        : await cmdBuild(file, flags, true); break;
+      case 'check':  process.exitCode = flags.dryRun
+        ? await cmdDryRun(file, flags)
+        : await cmdBuild(file, flags, false); break;
       case 'lint':   process.exitCode = cmdLint(file); break;
       case 'suggest': process.exitCode = await cmdSuggest(file, flags); break;
       case 'record': process.exitCode = await cmdBuild(file, { ...flags, live: true, record: true }, false); break;

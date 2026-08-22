@@ -1,0 +1,47 @@
+name: CI
+
+# Everything here runs without an API key. The bundled examples replay from
+# committed recordings, so a fork or a pull request from anyone gets the full
+# result without secrets and without spending anything.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Tests
+        run: npm test
+
+      - name: Reproduce the documented findings
+        run: npm run findings
+
+      - name: Verify the repository against its own .kiro specification
+        run: npm run verify
+
+      - name: Every bundled specification still resolves as recorded
+        run: |
+          set -e
+          for f in examples/*.fixed.shall; do
+            echo "::group::$f must compile"
+            node dist/shall/cli.js check "$f" --no-conform
+            echo "::endgroup::"
+          done
+          for f in examples/word-count.shall; do
+            echo "::group::$f must be rejected"
+            if node dist/shall/cli.js check "$f" --no-conform; then
+              echo "expected an ambiguity report for $f"; exit 1
+            fi
+            echo "::endgroup::"
+          done

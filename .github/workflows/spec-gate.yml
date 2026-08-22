@@ -1,0 +1,30 @@
+name: Specification gate
+
+# A reusable example of SHALL as a merge gate. Any .shall file that changed in
+# this pull request must be unambiguous before it can merge. Requires a provider
+# key in repository secrets, since a new specification has no recording yet.
+on:
+  pull_request:
+    paths: ['**/*.shall']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: npm }
+      - run: npm ci && npm run build
+
+      - name: Lint every changed specification
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.shall' \
+            | xargs -r -n1 node dist/shall/cli.js lint
+
+      - name: Check every changed specification
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.shall' \
+            | xargs -r -n1 node dist/shall/cli.js check

@@ -5,6 +5,7 @@ import { join, resolve, basename } from 'node:path';
 import { parseShall, hasFatal } from './lang/parser.js';
 import { loadShallConfig } from './config.js';
 import { OpenAIProvider } from './provider/openai.js';
+import { ProviderRegistry, resolveRoster } from './provider/registry.js';
 import { compileEnsemble } from './compile/compiler.js';
 import { structuralProbes, parseGeneratedProbes, PROBE_INSTRUCTIONS } from './oracle/probes.js';
 import { runDifferential, buildVerdict } from './oracle/differential.js';
@@ -156,7 +157,7 @@ async function analyse(file: string, flags: Flags) {
   const program = loadProgram(file);
   const root = process.cwd();
   const config = loadShallConfig(root);
-  const provider = new OpenAIProvider();
+  const provider = new ProviderRegistry();
   const cacheDir = join(root, config.buildDir, 'cache');
 
   // Does a committed recording cover this exact program for every reader?
@@ -185,13 +186,28 @@ async function analyse(file: string, flags: Flags) {
     );
   }
 
+  // Drop readers whose vendor has no key, and say what independence remains.
+  const roster = resolveRoster(config.ensemble, provider);
+  if (!flags.json && !fullyRecorded) {
+    if (roster.dropped.length > 0) {
+      process.stderr.write(
+        `  skipping  ${roster.dropped.map((m) => m.label).join(', ')} (no key for ${[...new Set(roster.dropped.map((m) => m.provider))].join(', ')})\n`,
+      );
+    }
+    if (roster.singleVendor && roster.usable.length > 0) {
+      process.stderr.write(
+        `  note      all ${roster.usable.length} readers are ${roster.vendors[0]} - same-vendor readers share blind spots\n`,
+      );
+    }
+  }
+
   const probeLimit = flags.probes ?? config.probeCount;
   let probes = structuralProbes(program, probeLimit);
 
   // Adversarial probes need a model; structural probes alone still work offline.
   if (!flags.offline && !fullyRecorded && provider.isConfigured()) {
     try {
-      const result = await provider.complete(config.ensemble[0]!, {
+      const result = await provider.complete(roster.usable[0] ?? config.ensemble[0]!, {
         instructions: PROBE_INSTRUCTIONS,
         input: buildCompilerInput(program),
         maxOutputTokens: 2000,
@@ -204,7 +220,7 @@ async function analyse(file: string, flags: Flags) {
 
   const compiled = await compileEnsemble({
     program,
-    ensemble: config.ensemble,
+    ensemble: fullyRecorded ? config.ensemble : (roster.usable.length ? roster.usable : config.ensemble),
     provider,
     maxOutputTokens: config.maxOutputTokens,
     cacheDir,
@@ -295,7 +311,7 @@ async function runConformance(
       program,
       criteria,
       jurors,
-      provider: new OpenAIProvider(),
+      provider: new ProviderRegistry(),
       maxOutputTokens: 2000,
       minAgreement: 2,
       onProgress: (id) => process.stderr.write(`  deriving ${id}...\n`),
@@ -479,8 +495,8 @@ async function cmdVerify(flags: Flags): Promise<number> {
 }
 
 async function cmdModels(): Promise<number> {
-  const provider = new OpenAIProvider();
-  if (!provider.isConfigured()) throw new CliError('OPENAI_API_KEY is not set');
+  const provider = new ProviderRegistry();
+  if (!provider.isConfigured()) throw new CliError('no provider key is set (OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, ...)');
 
   const ids = await provider.listModels();
   const config = loadShallConfig(process.cwd());

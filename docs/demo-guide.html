@@ -1,0 +1,602 @@
+<title>Shooting the SHALL Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --paper:  #F7F8F9;
+    --card:   #FFFFFF;
+    --ink:    #16191D;
+    --muted:  #5A626C;
+    --faint:  #8B939D;
+    --rule:   rgba(22, 25, 29, 0.12);
+    --accent: #0E7C6B;
+    --warn:   #B45309;
+    --stop:   #B42318;
+    --code-bg:#12161B;
+    --code-fg:#E8ECF1;
+
+    --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:  #14171B;
+      --card:   #1B1F25;
+      --ink:    #E9ECEF;
+      --muted:  #A2ABB5;
+      --faint:  #79828C;
+      --rule:   rgba(233, 236, 239, 0.14);
+      --accent: #3FBFA8;
+      --warn:   #E9A23B;
+      --stop:   #F87171;
+      --code-bg:#0C0F13;
+      --code-fg:#E8ECF1;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:  #14171B;
+    --card:   #1B1F25;
+    --ink:    #E9ECEF;
+    --muted:  #A2ABB5;
+    --faint:  #79828C;
+    --rule:   rgba(233, 236, 239, 0.14);
+    --accent: #3FBFA8;
+    --warn:   #E9A23B;
+    --stop:   #F87171;
+    --code-bg:#0C0F13;
+    --code-fg:#E8ECF1;
+  }
+
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px 120px; }
+  @media (max-width: 640px) { .wrap { padding: 0 16px 80px; } }
+
+  header { padding: 64px 0 8px; }
+  .kicker {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem); line-height: 1.08; margin: 14px 0 0;
+    letter-spacing: -0.025em; font-weight: 600; text-wrap: balance;
+  }
+  .lede { font-size: 1.1rem; color: var(--muted); margin: 18px 0 0; max-width: 62ch; }
+
+  .facts {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    border-radius: 8px; overflow: hidden; margin: 34px 0 0;
+  }
+  .fact { background: var(--card); padding: 14px 16px; }
+  .fact dt {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--faint);
+  }
+  .fact dd { margin: 4px 0 0; font-weight: 600; font-size: 0.95rem; }
+
+  h2 {
+    font-size: 1.05rem; margin: 66px 0 0; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 12px; font-weight: 600;
+  }
+  h2 .num {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+  }
+  h3 {
+    font-size: 0.95rem; margin: 30px 0 10px; font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  p { margin: 12px 0; max-width: 68ch; }
+  .muted { color: var(--muted); }
+
+  pre {
+    background: var(--code-bg); color: var(--code-fg); border-radius: 8px;
+    padding: 16px 18px; overflow-x: auto; font-family: var(--mono);
+    font-size: 13px; line-height: 1.65; margin: 14px 0;
+  }
+  code { font-family: var(--mono); font-size: 0.9em; }
+  p code, li code, td code {
+    background: var(--card); border: 1px solid var(--rule);
+    padding: 1px 5px; border-radius: 4px;
+  }
+  pre .c { color: #7D8994; }
+  pre .g { color: #5FD3B0; }
+
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 16px 0; }
+  ol.steps > li {
+    counter-increment: s; position: relative; padding: 0 0 0 38px; margin: 0 0 16px;
+  }
+  ol.steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    width: 24px; height: 24px; border-radius: 6px;
+    background: var(--card); border: 1px solid var(--rule);
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    display: grid; place-items: center; color: var(--muted);
+  }
+
+  .note, .warnbox {
+    border-left: 3px solid var(--accent); background: var(--card);
+    padding: 14px 18px; margin: 20px 0; border-radius: 0 8px 8px 0;
+    font-size: 0.94rem;
+  }
+  .warnbox { border-left-color: var(--warn); }
+  .note strong, .warnbox strong { display: block; margin-bottom: 4px; }
+
+  .scroller { overflow-x: auto; margin: 18px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 520px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--faint); font-weight: 600;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.t { font-family: var(--mono); white-space: nowrap; color: var(--accent); font-weight: 500; }
+
+  .script { margin: 22px 0; }
+  .take {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 8px;
+    padding: 18px 20px; margin: 12px 0;
+  }
+  .take-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .take-head .id {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: #fff; background: var(--ink); padding: 2px 8px; border-radius: 4px;
+  }
+  .take-head .when { font-family: var(--mono); font-size: 12px; color: var(--faint); }
+  .take-head .what { font-size: 0.9rem; color: var(--muted); }
+  .take .vo {
+    font-size: 1.02rem; line-height: 1.7; border-left: 3px solid var(--rule);
+    padding-left: 16px;
+  }
+  .take .onscreen {
+    margin-top: 12px; font-size: 0.88rem; color: var(--muted);
+  }
+  .take .onscreen b { color: var(--ink); font-weight: 600; }
+
+  .settings { display: grid; gap: 1px; background: var(--rule);
+    border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin: 16px 0; }
+  .setting {
+    background: var(--card); padding: 12px 16px;
+    display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: baseline;
+  }
+  .setting .k { font-size: 0.92rem; }
+  .setting .k small { display: block; color: var(--faint); font-size: 0.8rem; }
+  .setting .v { font-family: var(--mono); font-weight: 600; color: var(--accent); white-space: nowrap; }
+
+  .checklist { list-style: none; padding: 0; margin: 16px 0; }
+  .checklist li {
+    padding: 9px 0 9px 30px; position: relative; border-bottom: 1px solid var(--rule);
+    font-size: 0.95rem;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: "☐"; position: absolute; left: 4px; top: 8px;
+    color: var(--faint); font-size: 1.05rem;
+  }
+
+  footer {
+    margin-top: 80px; padding-top: 22px; border-top: 1px solid var(--rule);
+    color: var(--faint); font-size: 0.85rem;
+  }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="kicker">Demo production guide</div>
+  <h1>Shooting the SHALL demo</h1>
+  <p class="lede">
+    Everything needed to produce a three-minute submission video: the exact words
+    to narrate, the voice and settings to generate them with, what to type on
+    screen, and how to cut it together. Follow it top to bottom.
+  </p>
+
+  <dl class="facts">
+    <div class="fact"><dt>Length</dt><dd>3:00 max</dd></div>
+    <div class="fact"><dt>Scenes</dt><dd>7</dd></div>
+    <div class="fact"><dt>Narration</dt><dd>~2:40</dd></div>
+    <div class="fact"><dt>Cost</dt><dd>£0 · free tools</dd></div>
+  </dl>
+</header>
+
+<h2><span class="num">1</span> Get the machine ready</h2>
+
+<p>
+  Do all of this <em>before</em> you record anything. A demo that has to stop and
+  install something is a demo you shoot twice.
+</p>
+
+<h3>Make a clean terminal</h3>
+<p class="muted">
+  The recording is mostly terminal, so the terminal has to look good. Big text,
+  no clutter, nothing personal on screen.
+</p>
+
+<ol class="steps">
+  <li>Open your terminal. Press <code>Ctrl</code>+<code>Shift</code>+<code>+</code>
+      about <strong>six times</strong> to make the text large. Text that looks
+      slightly too big on your monitor is the right size on a judge's phone.</li>
+  <li>Resize the window to roughly <strong>half your screen, in the middle</strong>.
+      Don't fullscreen it — you want a clean margin around the edge.</li>
+  <li>Hide anything private: close other tabs, sign out of notifications, and turn
+      on Do Not Disturb.</li>
+  <li>Make the prompt short so it doesn't eat the line. Paste this in and press Enter:
+      <pre>export PS1="[38;5;71m$ [0m"</pre>
+      Your prompt is now just a green <code>$</code>.</li>
+</ol>
+
+<h3>Warm everything up</h3>
+<p class="muted">
+  Run each command once now. The first run of anything is always slower, and you
+  don't want that in the take.
+</p>
+
+<pre><span class="c"># in the shall folder</span>
+cd ~/Pictures/rya
+npm install &amp;&amp; npm run build
+npm test
+npm run findings
+npm run verify</pre>
+
+<div class="note">
+  <strong>Everything below runs with no API key.</strong>
+  The bundled examples replay from committed recordings. If you have your key in
+  <code>.env</code> that's fine — but nothing in this video needs it, and that is
+  itself worth saying out loud.
+</div>
+
+<h2><span class="num">2</span> The narration script</h2>
+
+<p>
+  Below is every word, split into seven takes. Generate each take as its own audio
+  file — that makes editing far easier than one long file, and lets you re-do a
+  single line without re-doing everything.
+</p>
+
+<div class="warnbox">
+  <strong>Read this before generating.</strong>
+  Do not add words. Every number in this script is real and checked. If you
+  improvise a bigger number, the demo stops being true, and the rules disqualify
+  submissions whose demo doesn't match the project.
+</div>
+
+<div class="script">
+
+  <div class="take">
+    <div class="take-head">
+      <span class="id">VO-1</span><span class="when">0:00 – 0:20</span>
+      <span class="what">The problem</span>
+    </div>
+    <p class="vo">
+      Here is a specification. Two sentences. Count the words in the text. Ignore
+      words shorter than three letters. Read it again. It looks completely clear.
+      It isn't.
+    </p>
+    <p class="onscreen">
+      <b>On screen:</b> the file <code>examples/word-count.shall</code> open in
+      your editor, nothing else. Slowly scroll so both requirements are visible.
+    </p>
+  </div>
+
+  <div class="take">
+    <div class="take-head">
+      <span class="id">VO-2</span><span class="when">0:20 – 0:52</span>
+      <span class="what">The split</span>
+    </div>
+    <p class="vo">
+      SHALL is a language whose source code is English. It compiles this
+      specification six times, using six different models, from GPT four-oh through
+      GPT five point six. Each one is asked the identical question. None of them is
+      told the others exist. Then every program they wrote is executed against the
+      same inputs, and the results are compared. They did not write the same
+      program. They wrote three different ones.
+    </p>
+    <p class="onscreen">
+      <b>On screen:</b> type <code>shall check examples/word-count.shall</code> and
+      let the report print. It takes under two seconds.
+    </p>
+  </div>
+
+  <div class="take">
+    <div class="take-head">
+      <span class="id">VO-3</span><span class="when">0:52 – 1:22</span>
+      <span class="what">The witness</span>
+    </div>
+    <p class="vo">
+      Here is the disagreement, shrunk to the smallest input that still causes it.
+      One dash, between two letters. Four readers say five words. Two say two words.
+      Nothing in the specification says whether a hyphen separates words — so the
+      compiler underlines the word "words", and refuses to build.
+    </p>
+    <p class="onscreen">
+      <b>On screen:</b> hold on the report. Zoom slowly into the underlined
+      <code>~~~~~</code> and the <code>WITNESS text = "a-a"</code> line.
+    </p>
+  </div>
+
+  <div class="take">
+    <div class="take-head">
+      <span class="id">VO-4</span><span class="when">1:22 – 1:50</span>
+      <span class="what">The fix</span>
+    </div>
+    <p class="vo">
+      Now the same specification, with one sentence rewritten to say exactly what a
+      token is. Six readers. Thirty-three inputs. One behaviour. It compiles. And
+      every clause is then checked against test cases derived from that clause
+      alone, because agreement is not the same thing as correctness.
+    </p>
+    <p class="onscreen">
+      <b>On screen:</b> show the one-line diff, then run
+      <code>shall check examples/word-count.fixed.shall</code>. Hold on
+      <span style="color:var(--accent);font-weight:600">UNAMBIGUOUS</span> and the
+      <code>CONFORMANCE 100%</code> line.
+    </p>
+  </div>
+
+  <div class="take">
+    <div class="take-head">
+      <span class="id">VO-5</span><span class="when">1:50 – 2:14</span>
+      <span class="what">Kiro</span>
+    </div>
+    <p class="vo">
+      This repository is held to the same standard it enforces. Fifty acceptance
+      criteria, across four Kiro specs, each one bound to the code that implements
+      it and the test that proves it. One command checks all of them. SHALL verifies
+      itself.
+    </p>
+    <p class="onscreen">
+      <b>On screen:</b> briefly show the <code>.kiro/</code> folder tree, then run
+      <code>npm run verify</code> and hold on <code>50/50 criteria proven</code>.
+    </p>
+  </div>
+
+  <div class="take">
+    <div class="take-head">
+      <span class="id">VO-6</span><span class="when">2:14 – 2:46</span>
+      <span class="what">The findings</span>
+    </div>
+    <p class="vo">
+      Every finding here is reproducible. No API key, no spending, ten seconds.
+      Including the one that changed the design. Five models from the same family
+      all called a specification unambiguous — while two of them wrote comments in
+      their own code showing they had noticed the ambiguity, and quietly picked a
+      side. An ensemble of one family shares its blind spots.
+    </p>
+    <p class="onscreen">
+      <b>On screen:</b> <code>npm run findings</code>. Speed the middle up in
+      editing; hold on Finding 1 and the two amber comment lines.
+    </p>
+  </div>
+
+  <div class="take">
+    <div class="take-head">
+      <span class="id">VO-7</span><span class="when">2:46 – 3:00</span>
+      <span class="what">Close</span>
+    </div>
+    <p class="vo">
+      Requirements are the program. When independent readers disagree about what
+      your English means, that is a compile error. SHALL.
+    </p>
+    <p class="onscreen">
+      <b>On screen:</b> the project name, the GitHub URL, and
+      <code>github.com/iamdflame/shall</code> held for three seconds.
+    </p>
+  </div>
+
+</div>
+
+<h2><span class="num">3</span> ElevenLabs — voice and settings</h2>
+
+<h3>Which voice</h3>
+<p>
+  Pick a calm, measured, slightly formal voice. This is a result being reported,
+  not a product being sold — an excited startup-ad voice will actively hurt you.
+</p>
+
+<div class="scroller">
+<table>
+  <thead><tr><th>Voice</th><th>Why</th><th>Use when</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Daniel</strong></td><td>British, news-presenter delivery. Authoritative and very clear on technical words.</td><td><strong>First choice.</strong> Best match for the tone.</td></tr>
+    <tr><td><strong>Brian</strong></td><td>Deep, calm American. Warmer than Daniel, equally steady.</td><td>If Daniel sounds too stiff to you.</td></tr>
+    <tr><td><strong>George</strong></td><td>British, warm and conversational.</td><td>If you want it friendlier.</td></tr>
+    <tr><td>Adam / Antoni</td><td>Common defaults — used in thousands of demos.</td><td>Avoid. Judges have heard them today already.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Exact settings</h3>
+<p class="muted">
+  In ElevenLabs, open <em>Text to Speech</em>, pick the voice, then open the
+  settings panel on the right.
+</p>
+
+<div class="settings">
+  <div class="setting"><div class="k">Model<small>Quality matters more than speed here</small></div><div class="v">Eleven Multilingual v2</div></div>
+  <div class="setting"><div class="k">Stability<small>Higher = steadier, less dramatic. You want steady.</small></div><div class="v">60 %</div></div>
+  <div class="setting"><div class="k">Similarity<small>How closely it holds the voice's character</small></div><div class="v">75 %</div></div>
+  <div class="setting"><div class="k">Style exaggeration<small>Keep this low — high values sound like an advert</small></div><div class="v">0 – 10 %</div></div>
+  <div class="setting"><div class="k">Speaker boost<small>Cleaner, more present sound</small></div><div class="v">On</div></div>
+  <div class="setting"><div class="k">Speed<small>If your version has it. Slightly slow reads as confident.</small></div><div class="v">0.95×</div></div>
+</div>
+
+<div class="note">
+  <strong>If the numbers you see are 0–1 instead of percentages.</strong>
+  Same thing: Stability <code>0.60</code>, Similarity <code>0.75</code>,
+  Style <code>0.05</code>.
+</div>
+
+<h3>Generating the seven files</h3>
+<ol class="steps">
+  <li>Paste <strong>VO-1 only</strong> into the text box. Nothing else.</li>
+  <li>Press Generate. Listen to the whole thing.</li>
+  <li>If a word sounds wrong, fix it phonetically in the text and regenerate.
+      Useful ones for this script:
+      <pre>GPT four-oh          <span class="c">not "GPT 4o"</span>
+GPT five point six   <span class="c">not "GPT 5.6"</span>
+SHALL                <span class="c">if it whispers it, write S-H-A-L-L</span></pre></li>
+  <li>Download as MP3. Name it exactly <code>vo-1.mp3</code>.</li>
+  <li>Repeat for VO-2 through VO-7. Keep the same voice and settings for all seven,
+      or they won't sound like one person.</li>
+</ol>
+
+<div class="warnbox">
+  <strong>Free-tier characters.</strong>
+  This whole script is roughly 1,600 characters. The free tier is usually 10,000
+  per month, so you have room for about six full regenerations. Generate one take
+  at a time rather than the whole script repeatedly.
+</div>
+
+<h2><span class="num">4</span> Record the screen</h2>
+
+<h3>Install OBS</h3>
+<pre>sudo apt update
+sudo apt install obs-studio</pre>
+
+<h3>Set OBS up once</h3>
+<ol class="steps">
+  <li>Open OBS. If a setup wizard appears, choose
+      <strong>“Optimise just for recording”</strong>.</li>
+  <li>In the <em>Sources</em> box at the bottom, click <strong>+</strong> →
+      <strong>Screen Capture (XSHM)</strong> → OK → OK.</li>
+  <li>Go to <em>Settings</em> → <em>Video</em>:
+      <pre>Base resolution:   1920x1080
+Output resolution: 1920x1080
+FPS:               30</pre></li>
+  <li>Go to <em>Settings</em> → <em>Output</em>:
+      <pre>Recording format:  MP4
+Recording quality: High Quality, Medium File Size</pre></li>
+  <li><strong>Settings → Audio → turn every microphone OFF.</strong> You are
+      narrating with ElevenLabs; a live mic will only add room noise.</li>
+  <li>Click <strong>OK</strong>.</li>
+</ol>
+
+<h3>Shoot each scene separately</h3>
+<p>
+  Record seven short clips, not one long take. If you fumble a command you re-shoot
+  ten seconds, not three minutes.
+</p>
+
+<div class="scroller">
+<table>
+  <thead><tr><th>Clip</th><th>What to do</th><th>Real duration</th></tr></thead>
+  <tbody>
+    <tr><td class="t">clip-1</td><td>Editor showing <code>examples/word-count.shall</code>. Scroll slowly once.</td><td>~15 s</td></tr>
+    <tr><td class="t">clip-2</td><td>Terminal. Type <code>shall check examples/word-count.shall</code>, Enter, let it finish.</td><td>~10 s</td></tr>
+    <tr><td class="t">clip-3</td><td>Same output still on screen. Don't type. Just let it sit.</td><td>~20 s</td></tr>
+    <tr><td class="t">clip-4</td><td><code>git diff</code> of the fixed file, then <code>shall check examples/word-count.fixed.shall</code>.</td><td>~15 s</td></tr>
+    <tr><td class="t">clip-5</td><td><code>tree .kiro</code> then <code>npm run verify</code>.</td><td>~25 s</td></tr>
+    <tr><td class="t">clip-6</td><td><code>npm run findings</code>. Runs about 70 s — you will speed this up later.</td><td>~70 s</td></tr>
+    <tr><td class="t">clip-7</td><td>A plain terminal showing the repo URL, or a simple title card.</td><td>~8 s</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="muted">
+  Type commands at a normal, unhurried pace. Do not backspace on camera — if you
+  mistype, stop the recording and shoot that clip again.
+</p>
+
+<div class="note">
+  <strong>The exact commands, ready to copy.</strong>
+  <pre>node dist/shall/cli.js check examples/word-count.shall
+node dist/shall/cli.js check examples/word-count.fixed.shall
+npm run verify
+npm run findings</pre>
+</div>
+
+<h2><span class="num">5</span> Edit it together</h2>
+
+<h3>Install Kdenlive</h3>
+<pre>sudo apt install kdenlive</pre>
+
+<h3>Assemble</h3>
+<ol class="steps">
+  <li>Open Kdenlive → <em>Project</em> → <em>Add Clip</em> → select all seven video
+      clips and all seven MP3s.</li>
+  <li>Drag <code>clip-1</code> onto the <strong>V1</strong> video track at the very
+      start. Drag <code>vo-1.mp3</code> onto the <strong>A1</strong> audio track,
+      also at the start.</li>
+  <li>Repeat in order: each clip on V1, its voiceover on A1, butted up against the
+      previous one with no gaps.</li>
+  <li><strong>Match the video to the voice, not the reverse.</strong> If VO-3 runs
+      30 seconds and clip-3 is only 20, stretch clip-3: right-click →
+      <em>Duration</em> → set it to match. A still terminal held longer is fine.</li>
+</ol>
+
+<h3>Speed up the slow bit</h3>
+<p>
+  Clip-6 (<code>npm run findings</code>) runs about 70 seconds and the voiceover is
+  32. Right-click the clip → <strong>Change Speed</strong> → set
+  <strong>300 %</strong>. Then cut the last few seconds so it ends on the green
+  “all findings reproduced” line.
+</p>
+
+<h3>Make it readable</h3>
+<ul class="checklist">
+  <li>Add a <em>Zoom</em> effect on clip-3 slowly pushing into the underlined word. Effects → search “Transform” → animate Size from 100 % to 140 %.</li>
+  <li>Add a half-second black fade at the very start and very end (Transitions → Fade from black / Fade to black).</li>
+  <li>Put a title card on clip-7: <em>Project</em> → <em>Add Title Clip</em>. Two lines only — <strong>SHALL</strong> and <code>github.com/iamdflame/shall</code>.</li>
+  <li>No background music. It competes with the narration and adds nothing here.</li>
+</ul>
+
+<h3>Export</h3>
+<ol class="steps">
+  <li>Click <strong>Render</strong> (top toolbar).</li>
+  <li>Choose <strong>MP4 – H.264/AAC</strong>.</li>
+  <li>Set the file name to <code>shall-demo.mp4</code>.</li>
+  <li>Click <strong>Render to File</strong>. Wait.</li>
+  <li>Watch the whole thing back before uploading. All of it.</li>
+</ol>
+
+<h2><span class="num">6</span> Upload and submit</h2>
+
+<ol class="steps">
+  <li>Go to YouTube → <strong>Create</strong> → <strong>Upload video</strong>.</li>
+  <li>Title: <code>SHALL — a language whose source code is English</code></li>
+  <li>Description: paste the first paragraph of the README plus the repo link.</li>
+  <li>Visibility: <strong>Unlisted</strong> is accepted and is the safer choice.</li>
+  <li>Copy the link into the submission form alongside
+      <code>github.com/iamdflame/shall</code>.</li>
+</ol>
+
+<h2><span class="num">7</span> Final checks</h2>
+
+<ul class="checklist">
+  <li>The repository is <strong>public</strong> — a judge in a private window can open it.</li>
+  <li>The video is under 3:00.</li>
+  <li>Every number spoken matches what is on screen.</li>
+  <li>No API key, no <code>.env</code>, and no personal information is visible in any frame.</li>
+  <li>The <code>.kiro</code> folder appears on screen during VO-5.</li>
+  <li>Audio is audible on phone speakers — test it on your phone, not your laptop.</li>
+  <li>The README, the video and the repository all tell the same story.</li>
+</ul>
+
+<div class="note">
+  <strong>If you only have time for one improvement.</strong>
+  Re-record clip-3 and hold longer on the witness. The single most persuasive
+  moment in the whole video is a viewer realising that <code>"a-a"</code> — three
+  characters — is enough to split six state-of-the-art models. Give that time to
+  land.
+</div>
+
+<footer>
+  Every command and duration in this guide was measured on the actual project.
+  <code>shall check</code> takes 1.7 s, <code>npm run verify</code> 16 s,
+  <code>npm run findings</code> 67 s.
+</footer>
+
+</div>

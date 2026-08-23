@@ -264,11 +264,19 @@ async function analyse(file: string, flags: Flags) {
   });
 
   if (compiled.candidates.length === 0) {
-    throw new CliError(
-      flags.offline
-        ? 'nothing recorded or cached for this program, and --offline forbids asking'
-        : 'no reader produced a candidate for this program',
-    );
+    if (flags.offline) {
+      throw new CliError('nothing recorded or cached for this program, and --offline forbids asking');
+    }
+    // Every reader failed, and the reasons are the only useful thing here.
+    // Reporting "no reader produced a candidate" and discarding them sent me
+    // reading the ensemble configuration for an hour over an account that had
+    // simply run out of credit - which the provider had said in as many words.
+    const reasons = [...new Set(compiled.failures.map((f) => f.reason))];
+    const detail =
+      reasons.length === 1
+        ? `every reader failed: ${reasons[0]}`
+        : ['no reader produced a candidate:', ...compiled.failures.map((f) => `    ${f.label.padEnd(16)} ${f.reason}`)].join('\n');
+    throw new CliError(detail);
   }
 
   const oracle = runDifferential(compiled.candidates, {
@@ -696,11 +704,14 @@ async function cmdModels(): Promise<number> {
 
   const ids = await provider.listModels();
   const config = loadShallConfig(process.cwd());
+  // The registry qualifies every id with its vendor, because two vendors can
+  // ship the same model name. An ensemble member is matched on that same
+  // qualified form - comparing the bare name reported every reader as missing.
   const available = new Set(ids);
 
   process.stdout.write('\n  CONFIGURED ENSEMBLE\n\n');
   for (const m of config.ensemble) {
-    const ok = available.has(m.model);
+    const ok = available.has(m.id) || available.has(`${m.provider}:${m.model}`);
     process.stdout.write(`    ${ok ? '+' : 'x'}  ${m.label.padEnd(20)} ${m.model}${ok ? '' : '  (not available)'}\n`);
   }
   process.stdout.write(`\n  ${ids.length} models reachable. Set "ensemble" in shall.config.json to change.\n\n`);

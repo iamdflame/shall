@@ -3,7 +3,8 @@ import type { Program, ShallType, Field } from '../lang/types.js';
 import { isListType, isRecordType, isScalarType } from '../lang/types.js';
 import type { Probe } from '../oracle/probes.js';
 import { programCriteria } from '../lang/types.js';
-import { measureCoverage, referencedFields, guardNumbers } from './coverage.js';
+import { typePaths } from './coverage.js';
+import { measureCoverage, referencedFields, referencedPaths, guardNumbers } from './coverage.js';
 
 /**
  * Coverage-guided probe generation.
@@ -35,7 +36,7 @@ const MAX_PER_CRITERION = 8;
 /** One boundary a clause states, and whether the probe set straddles it. */
 export interface Boundary {
   criterion: Criterion;
-  /** The input whose magnitude the boundary applies to. */
+  /** The position whose magnitude the boundary applies to, e.g. "parcel.lengthCm". */
   field: string;
   /** The stated value, e.g. 3 in "shorter than three letters". */
   at: number;
@@ -66,22 +67,20 @@ export function boundaries(program: Program, probes: Probe[]): Boundary[] {
     const bounds = guardNumbers(criterion);
     if (bounds.length === 0) continue;
 
-    for (const name of referencedFields(criterion, program)) {
-      const field = program.interface.inputs.find((f) => f.name === name);
-      if (!field) continue;
+    for (const target of referencedPaths(criterion, program)) {
       // A boundary is a statement about magnitude, so a type without one - a
-      // bare boolean, a record with no measurable field - has nothing to
-      // straddle and is not reported as a gap.
-      if (magnitudeOf(neutral(field.type), field.type) === undefined) continue;
+      // bare boolean, a record carrying two numbers and no way to know which
+      // the clause meant - has nothing to straddle and is not reported as a gap.
+      if (magnitudeOf(neutral(target.type), target.type) === undefined) continue;
 
       const seen = probes
-        .map((p) => magnitudeOf(p.input[name], field.type))
+        .map((p) => magnitudeOf(readPath(p.input, target.path), target.type))
         .filter((m): m is number => m !== undefined);
 
       for (const at of bounds) {
         out.push({
           criterion,
-          field: name,
+          field: target.path,
           at,
           below: seen.some((m) => m < at),
           on: seen.some((m) => m === at),
@@ -135,7 +134,7 @@ export function targetedProbes(
 ): TargetedProbe[] {
   if (budget <= 0) return [];
 
-  const wanted: { criterion: Criterion; field: string; at: number; sides: number[] }[] = [];
+  const wanted: { criterion: Criterion; path: string; at: number; sides: number[] }[] = [];
 
   // Boundaries the probe set does not straddle: the sharpest gaps, so first.
   for (const b of boundaries(program, probes)) {
@@ -143,14 +142,17 @@ export function targetedProbes(
     if (!b.below) sides.push(b.at - 1);
     if (!b.on) sides.push(b.at);
     if (!b.above) sides.push(b.at + 1);
-    if (sides.length > 0) wanted.push({ criterion: b.criterion, field: b.field, at: b.at, sides });
+    if (sides.length > 0) wanted.push({ criterion: b.criterion, path: b.field, at: b.at, sides });
   }
 
   // Then clauses nothing engaged at all, which have no boundary to aim at and
-  // are reached by making the inputs they name non-default.
+  // are reached by making the positions they name non-default.
   for (const row of measureCoverage(program, probes).unexercised) {
-    for (const field of referencedFields(row.criterion, program)) {
-      wanted.push({ criterion: row.criterion, field, at: 1, sides: [1, 2] });
+    const paths = referencedPaths(row.criterion, program);
+    for (const target of paths.length > 0
+      ? paths
+      : referencedFields(row.criterion, program).map((f) => ({ path: f }))) {
+      wanted.push({ criterion: row.criterion, path: target.path, at: 1, sides: [1, 2] });
     }
   }
 
@@ -159,22 +161,28 @@ export function targetedProbes(
   const out: TargetedProbe[] = [];
   const perCriterion = new Map<string, number>();
 
+  const positions = new Map(
+    program.interface.inputs.flatMap((f) => typePaths(f.type, f.name).map((t) => [t.path, t.type] as const)),
+  );
+  for (const f of program.interface.inputs) positions.set(f.name, f.type);
+
   for (const want of wanted) {
     if (out.length >= budget) break;
-    const field = program.interface.inputs.find((f) => f.name === want.field);
-    if (!field) continue;
+    const type = positions.get(want.path);
+    if (!type) continue;
 
     for (const size of want.sides) {
       if (out.length >= budget) break;
       const used = perCriterion.get(want.criterion.id) ?? 0;
       if (used >= MAX_PER_CRITERION) break;
 
-      const value = atMagnitude(field.type, size);
+      const value = atMagnitude(type, size);
       if (value === undefined) continue;
 
-      // Vary only the field the boundary is about. Changing anything else
+      // Vary only the position the boundary is about. Changing anything else
       // risks engaging a different clause and crediting this one for it.
-      const input = { ...baseline, [want.field]: value };
+      const input = writePath(baseline, want.path, value);
+      if (input === undefined) continue;
       const key = JSON.stringify(input);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -184,7 +192,7 @@ export function targetedProbes(
         id: `t${out.length + 1}`,
         input,
         origin: 'structural',
-        rationale: `criterion ${want.criterion.id} turns at ${want.at}; this sits at ${size}`,
+        rationale: `criterion ${want.criterion.id} turns at ${want.at} on ${want.path}; this sits at ${size}`,
         targets: want.criterion.id,
       });
     }
@@ -232,6 +240,43 @@ function atMagnitude(type: ShallType, n: number): unknown {
     return record;
   }
   return undefined;
+}
+
+/* ── addressing a position inside an input ─────────────────────────────── */
+
+/** Read the value at a dotted path, or undefined if the path is not present. */
+function readPath(input: Record<string, unknown>, path: string): unknown {
+  // A list segment has no single value to read; the list itself is the value
+  // a length boundary compares against, so the walk stops there.
+  const [head, ...rest] = path.split('.');
+  let value: unknown = input[head!];
+  for (const segment of rest) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+    value = (value as Record<string, unknown>)[segment];
+  }
+  return value;
+}
+
+/** A copy of the input with one position replaced, creating records as needed. */
+function writePath(
+  input: Record<string, unknown>,
+  path: string,
+  value: unknown,
+): Record<string, unknown> | undefined {
+  const segments = path.split('.');
+  if (segments.some((s) => s.endsWith('[]'))) return undefined;  // no index to write to
+
+  const root = structuredClone(input);
+  let cursor: Record<string, unknown> = root;
+
+  for (const segment of segments.slice(0, -1)) {
+    const next = cursor[segment];
+    if (!next || typeof next !== 'object' || Array.isArray(next)) cursor[segment] = {};
+    cursor = cursor[segment] as Record<string, unknown>;
+  }
+
+  cursor[segments[segments.length - 1]!] = value;
+  return root;
 }
 
 /** The least interesting value of each input: the background a probe varies from. */

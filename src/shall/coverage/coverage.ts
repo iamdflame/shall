@@ -400,6 +400,61 @@ function fieldNames(type: ShallType): string[] {
   return [];
 }
 
+/** A scalar position inside an input type, addressed by path. */
+export interface TypePath {
+  /** Dotted path from the input, e.g. "parcel.lengthCm". */
+  path: string;
+  /** The final segment, which is what a clause usually names. */
+  name: string;
+  type: ShallType;
+}
+
+/**
+ * Every scalar position an input type contains, derived from the type alone.
+ *
+ * `leaves` needs a value; this needs only the declaration, which is what
+ * boundary analysis has to work from - the question "did any probe sit above
+ * this threshold" is asked of a field, not of one probe's value.
+ *
+ * A list stops at its element type. "parcel.tags[]" is one position whether the
+ * list holds three entries or none.
+ */
+export function typePaths(type: ShallType, path: string): TypePath[] {
+  if (isRecordType(type)) return type.record.flatMap((f) => typePaths(f.type, `${path}.${f.name}`));
+  if (isListType(type)) return typePaths(type.list, `${path}[]`);
+  return [{ path, name: path.split(/[.[]/).filter(Boolean).pop() ?? path, type }];
+}
+
+/**
+ * Which positions inside the inputs a clause refers to.
+ *
+ * A clause naming a record field means that field: "IF the parcel length is
+ * above 100" states a boundary on `parcel.lengthCm`, not on the parcel as a
+ * whole - and a record holding two numbers has no single magnitude for a
+ * threshold to compare against, so without this the boundary is simply lost.
+ *
+ * When nothing inside is named but the input itself is, the whole input is
+ * returned and magnitude falls back to whatever the type as a whole measures.
+ */
+export function referencedPaths(
+  criterion: Criterion,
+  program: Program,
+  vocab: Map<string, Set<string>> = vocabulary(program),
+): TypePath[] {
+  const named = new Set(referencedFields(criterion, program, vocab));
+  const out: TypePath[] = [];
+
+  for (const field of program.interface.inputs) {
+    const inside = typePaths(field.type, field.name)
+      .filter((leaf) => leaf.path !== field.name && namesField(criterion.raw, leaf.name));
+
+    if (inside.length > 0) out.push(...inside);
+    else if (named.has(field.name)) out.push({ path: field.name, name: field.name, type: field.type });
+  }
+
+  return out;
+}
+
 /* ── fallback clauses ──────────────────────────────────────────────────── */
 
 /**

@@ -1,0 +1,16 @@
+program ParcelPrice
+
+Prices a parcel for delivery.
+
+interface
+  input  parcel: { weightGrams: integer, lengthCm: integer, express?: boolean }
+  output cents: integer
+
+Requirement 1: Base rate
+  THE SYSTEM SHALL charge five cents for every gram of weight
+
+Requirement 2: Oversize
+  IF the parcel length is above 100 cm THEN the system SHALL add a surcharge of 1000 cents
+
+Requirement 3: Express
+  WHERE express delivery is requested, THE SYSTEM SHALL double the cost

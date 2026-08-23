@@ -5,6 +5,9 @@ import { typeName, scalarsWithin, isRecordType, isListType } from '../dist/shall
 import { parseShall, hasFatal } from '../dist/shall/lang/parser.js';
 import { structuralProbes } from '../dist/shall/oracle/probes.js';
 import { minimiseWitness } from '../dist/shall/oracle/minimise.js';
+import { readFileSync } from 'node:fs';
+import { measureCoverage } from '../dist/shall/coverage/coverage.js';
+import { boundaries, targetedProbes } from '../dist/shall/coverage/targeted.js';
 
 /* ── the grammar ────────────────────────────────────────────────────────── */
 
@@ -152,4 +155,41 @@ test('a probe with an invented record field is rejected', async () => {
   ]) {
     assert.equal(parseGeneratedProbes(bad, program, 0).length, 0, `should reject: ${bad}`);
   }
+});
+
+test('the shipped record example parses, probes and finds its boundary', () => {
+  // examples/parcel-price.shall has no recorded ensemble - the account that
+  // recorded the others ran out of credit - so `shall check` on it needs a key.
+  // Everything that does not need a reader is asserted here instead, because an
+  // example nothing tests is an example that quietly rots.
+  const program = parseShall(readFileSync('examples/parcel-price.shall', 'utf8'), 'p').program;
+  const parcel = program.interface.inputs[0]!;
+
+  assert.equal(typeName(parcel.type), '{ weightGrams: integer, lengthCm: integer, express?: boolean }');
+
+  const probes = structuralProbes(program, 96);
+  assert.ok(probes.length > 1);
+  // Every probe must be a well-formed parcel: the two required fields present,
+  // and the optional one either present or absent but never null.
+  for (const p of probes) {
+    const v = p.input.parcel as Record<string, unknown>;
+    assert.equal(typeof v.weightGrams, 'number', JSON.stringify(v));
+    assert.equal(typeof v.lengthCm, 'number', JSON.stringify(v));
+    assert.ok(!('express' in v) || typeof v.express === 'boolean', JSON.stringify(v));
+  }
+  // The optional field must be dropped by at least one probe, or its absence
+  // is never a case anybody reads.
+  assert.ok(probes.some((p) => !('express' in (p.input.parcel as object))), 'express is never absent');
+
+  // "IF the parcel length is above 100 cm" is a boundary on a field inside a
+  // record that carries two numbers - there is no single magnitude for the
+  // record, so it only resolves if boundaries are addressed by path.
+  const at100 = boundaries(program, probes).find((b) => b.field === 'parcel.lengthCm' && b.at === 100);
+  assert.ok(at100, 'the boundary inside the record must be found');
+  assert.equal(at100.above, false, 'no structural probe exceeds 100 cm');
+
+  const made = targetedProbes(program, probes, 8);
+  const over = made.find((p) => ((p.input.parcel as Record<string, unknown>).lengthCm as number) > 100);
+  assert.ok(over, 'a probe must be synthesised above the boundary');
+  assert.equal(measureCoverage(program, [...probes, ...made]).score, 1);
 });

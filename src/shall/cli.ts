@@ -30,6 +30,7 @@ import { runTests } from '../verify/runner.js';
 import { buildReport, toLock } from '../verify/conformance.js';
 import { readLock, writeLock } from '../lock/lockfile.js';
 import { renderReport, exitCodeFor } from '../report/terminal.js';
+import { renderHtml } from '../report/html.js';
 
 const HELP = `
 shall - a language whose source code is English
@@ -67,6 +68,7 @@ OPTIONS
   --dry-run       Show what a run would cost and which readers are reachable.
   --apply <n>     With 'suggest': write reading <n> into the file and re-check.
   --update        Record the current state as the drift baseline ('verify').
+  --html <path>   With 'verify': also write a self-contained HTML report.
 
 EXIT CODES
   0  the specification is unambiguous
@@ -88,6 +90,7 @@ interface Flags {
   out?: string;
   input?: string;
   apply?: number;
+  html?: string;
 }
 
 function parseFlags(argv: string[]): Flags {
@@ -104,6 +107,7 @@ function parseFlags(argv: string[]): Flags {
     update: argv.includes('--update'),
     verbose: argv.includes('--verbose') || argv.includes('-v'),
     noConform: argv.includes('--no-conform'),
+    ...(value('--html') !== undefined ? { html: value('--html') } : {}),
     noCache: argv.includes('--no-cache'),
     json: argv.includes('--json'),
     ...(probes ? { probes: Number(probes) } : {}),
@@ -689,6 +693,17 @@ async function cmdVerify(flags: Flags): Promise<number> {
   }
 
   process.stdout.write(renderReport(report, { verbose: flags.verbose }));
+
+  // A terminal report is for the person who ran it. The HTML one is for
+  // everybody else - it is a single self-contained file with no external
+  // requests, so it survives being attached to a pull request or opened from
+  // disk two years later.
+  if (flags.html) {
+    const target = resolve(root, flags.html);
+    mkdirSync(resolve(target, '..'), { recursive: true });
+    writeFileSync(target, renderHtml(report), 'utf8');
+    process.stdout.write(`  report written to ${target}\n\n`);
+  }
 
   if (flags.update) {
     writeLock(join(root, '.shall', 'spec.lock.json'), toLock(report));

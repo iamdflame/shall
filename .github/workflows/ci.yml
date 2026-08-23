@@ -28,7 +28,15 @@ jobs:
         run: npm run findings
 
       - name: Verify the repository against its own .kiro specification
-        run: npm run verify
+        run: node dist/shall/cli.js verify --html conformance.html
+
+      # A run that only prints to a log is a run nobody can look at afterwards.
+      - name: Keep the conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-report
+          path: conformance.html
 
       - name: Every bundled specification still resolves as recorded
         run: |

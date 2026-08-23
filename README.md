@@ -246,6 +246,7 @@ shall record my-spec.shall   # commit it so others replay free
 | `--probes <n>` | Probe count. Probes are microseconds; readers are not. |
 | `--json` | Machine-readable result. |
 | `--update` | Record the drift baseline (`verify`). |
+| `--html <path>` | With `verify`: also write a self-contained HTML report. |
 
 Exit codes: `0` unambiguous · `1` ambiguous or invalid · `2` could not run.
 
@@ -503,6 +504,11 @@ rephrased.
 Every one of those 75 criteria is bound — by a `@shall <spec>/<id>` annotation —
 to the code that implements it and the test that proves it, and one command
 checks all of them:
+
+`shall verify --html report.html` writes the same result as a single
+self-contained file — no CDN, no webfont, no analytics, nothing to fetch — so it
+survives being attached to a pull request or opened from disk years later. The
+test suite asserts that by pattern rather than trusting it.
 
 ```console
 $ npm run verify

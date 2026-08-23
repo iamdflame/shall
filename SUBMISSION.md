@@ -163,13 +163,57 @@ Four readers against two is still a compile error. A plurality is evidence about
 which interpretation is more popular — precisely the question a specification
 exists to answer.
 
-### 6. Probes are specification-aware and free
+### 6. Probes are written by the requirements, not just the types
 
-Three tiers, all deterministic: type-derived edge values, every numeric literal
-the specification itself mentions plus its neighbours, and a dense sweep when the
-budget is large. Half the budget is reserved for input *interactions*, because an
-ambiguity requiring two inputs to move together is the most common kind and
-single-field variation can never witness it.
+Three deterministic tiers — type-derived edge values, every numeric literal the
+specification mentions plus its neighbours, and a dense sweep at large budgets —
+with half the budget reserved for input *interactions*, because an ambiguity
+requiring two inputs to move together is the most common kind and single-field
+variation can never witness it.
+
+Then a fourth tier that reads the clauses. Structural probes know the shape of
+your inputs and nothing about what your requirements say, so they can leave a
+stated boundary untouched. The dice specification says *"IF five dice show the
+same face"*; every interface-derived probe topped out below six, so nothing ever
+asked what happens at six. Coverage-guided generation reads the boundary out of
+the requirement, sees that no probe sits above it, and writes one:
+
+```
+dice = [1,1,1,1,1]     2000    all six readers agree
+dice = [1,1,1,1,1,1]    100    gpt-4o, o4-mini, gpt-5.2, gpt-5.6-terra
+                        250    gpt-4.1
+                        400    gpt-5.6-luna
+```
+
+A **three-way** split on a specification previously reported as splitting two
+ways, from an input nobody wrote. Deciding what counts as a boundary comes from
+the EARS grammar itself: every number in a guard is one, and outside a guard only
+a number wearing comparison wording qualifies — so *"ignore words shorter than
+three letters"* turns at three, while *"score each die showing one as fifty
+points"* states no threshold at all, the fifty being what it pays out.
+
+### 6b. Coverage, for requirements rather than lines
+
+A green build says the readers agreed on every probe. It does not say every
+clause was tested. If no probe ever engaged clause 3.2, six readers agreeing
+tells you nothing whatsoever about clause 3.2 — so both numbers print on success,
+not only on failure:
+
+```
+SPECIFICATION COVERAGE  100% - 6/6 criteria engaged by at least one of 96 probes
+BOUNDARY COVERAGE       100% - 3/3 stated boundaries probed on both sides
+```
+
+Deciding whether a clause was engaged is a judgement and both failure modes are
+bad — over-count and coverage inflates until it means nothing, under-count and it
+cries wolf. Four rules, each written because a plausible one failed: stemming, so
+*"each remaining die"* reaches an input named `dice`; a vocabulary learned from
+the document, so *"ignore words shorter than three letters"* reaches `text`
+because requirement 1 already bound them; response verbs excluded from that
+vocabulary, since *"SHALL return the amount"* would otherwise teach that "return"
+means `amount` and report 100% on a specification nothing tested; and fallbacks
+(*"IF no rule above applies"*) resolved by complement, since no lexical rule can
+ever match them.
 
 ### 7. Consensus is checked separately from correctness
 
@@ -308,7 +352,7 @@ next section — it runs the real tool, on the judge's machine, with no key.
 **https://youtu.be/peMdu3rn8Yc**
 
 Three minutes. The specification, the split, the minimal witness, the one-sentence
-fix, `npm run verify` reaching 50/50, and the findings reproducing.
+fix, `npm run verify` reaching 75/75, and the findings reproducing.
 
 ---
 
@@ -353,13 +397,13 @@ shall check examples/word-count.fixed.shall
 Expected: `UNAMBIGUOUS`, six readers agreeing on all 33 probes, and
 `CONFORMANCE 100% · 11/11 derived cases hold`. **Exit code 0.** About 1 second.
 
-### Reproduce the four findings
+### Reproduce the five findings
 
 ```bash
 npm run findings
 ```
 
-Expected: 12 checks pass in roughly 15 seconds, ending in
+Expected: 18 checks pass in roughly 13 seconds, ending in
 `all findings reproduced — no API key, no spend`. Progress is printed throughout,
 so it never looks stalled.
 
@@ -370,15 +414,15 @@ npm run kiro     # what the .kiro package contains
 npm run verify   # check the code against it
 ```
 
-Expected: the listing totals **50 criteria**, and `verify` reports
-`CONFORMANCE 100.0% · 50/50 criteria proven`. The two numbers matching is the
+Expected: the listing totals **75 criteria** across five spec folders, and
+`verify` reports `CONFORMANCE 100.0% · 75/75 criteria proven`. The two numbers matching is the
 point — `verify` runs the full test suite and joins each result back to the
 criterion it proves, so it takes about 16 seconds.
 
 ### The rest
 
 ```bash
-npm test                                  # 148 tests, 18 files, TAP
+npm test                                  # 193 tests, 20 files, TAP
 shall lint examples/order-total.shall     # static scan, no model, no key
 shall suggest examples/word-count.shall   # needs a key: proposes rewrites
 shall check <file> --dry-run              # what a real run would cost
@@ -395,7 +439,7 @@ services, no Docker, no build step beyond `tsc`.
 
 ### Continuous integration
 
-`.github/workflows/ci.yml` runs the tests, reproduces all four findings, verifies
+`.github/workflows/ci.yml` runs the tests, reproduces all five findings, verifies
 the repository against its own specification, and asserts every bundled example
 still resolves as recorded — all without secrets, because the recordings are
 committed. `.github/workflows/spec-gate.yml` is the adoption path: any `.shall`
@@ -426,10 +470,10 @@ estimate and which readers are reachable before anything is spent.
 the contract this repository is continuously held to, and it is also the format
 the product itself consumes.
 
-**Four specs, 50 EARS acceptance criteria** — `shall-language` (25 criteria, plus
+**Five specs, 75 EARS acceptance criteria** — `shall-language` (25 criteria, plus
 `design.md` recording the reasoning behind each decision and `tasks.md` tracing
-49 tasks to the requirements they satisfy), `offline-replay`,
-`multi-vendor-ensemble` and `disambiguation`.
+49 tasks to the requirements they satisfy), `specification-coverage` (25),
+`disambiguation` (10), `offline-replay` (9) and `multi-vendor-ensemble` (6).
 
 **Three steering documents** loaded into every Kiro interaction — `product.md`,
 `tech.md` (which encodes the hard one-dependency rule and the provider boundary)
@@ -452,7 +496,7 @@ proven by one test only the last one bound.
 
 ## Findings
 
-Four results, each reproducible offline in about fifteen seconds by
+Five results, each reproducible offline in about thirteen seconds by
 `npm run findings`. Two of them contradicted the design and forced it to change.
 
 ### 1 — An ensemble of one model family shares its blind spots
@@ -492,14 +536,45 @@ splits the readers, because two clauses never say which applies first:
 ```
     ✓ the static lint finds nothing to complain about
     ✓ yet the readers still split
-        witness {"dice":[0,0,0,0,0]}
-        2000   gpt-4o, o4-mini, gpt-5.2, gpt-5.6-luna, gpt-5.6-terra
-        0      gpt-4.1
+        witness {"dice":[1,1,1]}
+        100    gpt-4o, gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra
+        250    gpt-5.6-luna
     ✓ a hand of three matching dice splits them too
         roll    [1,1,1,2,2]
         100    gpt-4o, gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra
         250    gpt-5.6-luna
 ```
+
+### 5 — The probes that find ambiguity are the ones the requirements ask for
+
+Structural probes are derived from the interface. They know the shape of the
+inputs and nothing about what the clauses say, which is the right default and
+also why they miss things — a clause can be engaged ninety times and never once
+tested where it turns.
+
+The dice specification says *"IF five dice show the same face THEN score two
+thousand instead"*. Every interface-derived probe topped out below six dice, so
+nothing ever asked what happens at six, and the split at six went unreported
+through every previous run. Coverage-guided generation reads the boundary out of
+the requirement, sees that no probe sits above it, and writes one:
+
+```
+    ✓ the specification states a boundary at five dice
+    ✓ and no interface-derived probe ever goes above it
+    ✓ so one probe is synthesised to sit just above it
+    ✓ five dice showing the same face: every reader agrees
+    ✓ six dice showing the same face: they do not
+    ✓ and the disagreement is three-way, not two
+
+        roll    [1,1,1,1,1]  unanimous
+        2000   gpt-4o, gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-luna, gpt-5.6-terra
+        roll    [1,1,1,1,1,1]  3 readings
+        100    gpt-4o, o4-mini, gpt-5.2, gpt-5.6-terra
+        250    gpt-4.1
+        400    gpt-5.6-luna
+```
+
+Nobody wrote that probe. The requirement did.
 
 On `[1,1,1,2,2]` one reader scored the three matching dice **both** as a set and
 again as singles — 250 against 100 — because nothing says whether a die consumed
@@ -520,13 +595,29 @@ under-specified itself.
 - **Consensus is not proof of correctness.** The conformance pass narrows this,
   but it relies on model-derived expectations filtered by agreement. A clause all
   readers misread the same way is reported as satisfied.
-- **The interface is minimal** — scalars and lists, one output. Records and
-  optional fields are not implemented.
+- **The interface covers scalars, lists and records**, nested arbitrarily, with
+  optional fields — but still one output. Unions, enums and recursive types are
+  not implemented.
+- **Engagement is still word matching underneath, and coverage inherits that.**
+  It is stem-aware, record-aware, and learns each document's own vocabulary — the
+  "die" versus `dice` miss listed here in the previous version is fixed, and
+  fixing it made two of the five dice criteria visible to attribution for the
+  first time. But a clause referring to an input through a synonym the document
+  never binds ("the parcel is oversized") will still read as unexercised. The
+  failure is visible: it names the clause it could not reach.
+- **A boundary must be stated as a number to be found.** "IF the parcel is heavy"
+  states a real boundary that nothing can probe, and the tool does not pretend
+  otherwise.
+- **Coverage says a clause was engaged, not that it was tested correctly.** A
+  probe that makes a rule applicable is not necessarily one that would expose a
+  misreading of it. Boundary coverage is the sharper number and is reported
+  beside it; neither is a proof.
+- **`examples/parcel-price.shall` has no recorded ensemble**, so `shall check` on
+  it needs an API key — the account that recorded the others is out of credit.
+  Everything about it that does not need a reader is asserted in the test suite.
 - **Attribution is evidential, not causal.** It reports which clause the
-  disagreements concentrate on. The engagement heuristic is lexical, so it misses
-  a clause that refers to an input by a different word ("die" where the input is
-  `dice`) — in that case the report honestly says no single clause is responsible
-  rather than guessing.
+  disagreements concentrate on. Ambiguity from an interaction between clauses is
+  reported as "no single clause is clearly responsible" rather than guessed at.
 - **Numeric equivalence is a relative-epsilon test** at 4 ULPs, not a bit-exact
   ULP count. It never bridges zero or a sign change and never absorbs
   catastrophic cancellation.
@@ -557,12 +648,12 @@ Measured on the submitted commit.
 
 | | |
 |---|---|
-| Tests | **148** passing, 18 files |
-| Acceptance criteria verified | **50 / 50** |
-| Kiro specs · hooks · steering docs | 4 · 3 · 3 |
+| Tests | **193** passing, 21 files |
+| Acceptance criteria verified | **75 / 75** |
+| Kiro specs · hooks · steering docs | 5 · 3 · 3 |
 | Recorded readers · programs | 47 · 7 |
-| Source | 5,287 lines, 29 TypeScript files |
+| Source | 6,558 lines, 32 TypeScript files |
 | Runtime dependencies | **1** (`openai`) |
-| Example specifications | 7 |
-| `npm run findings` | 12 checks, ~15s, no API key |
+| Example specifications | 8 |
+| `npm run findings` | 18 checks, ~13s, no API key |
 | Exit codes | ambiguous `1` · unambiguous `0` · cannot run `2` |

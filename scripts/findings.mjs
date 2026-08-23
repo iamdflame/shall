@@ -235,6 +235,29 @@ console.log('');
       console.log(`        ${bold(String(r.display).padEnd(6))} ${dim(r.members.join(', '))}`);
     }
   }
+
+  // A hand-picked roll as well as the generated ones. Structural probes never
+  // produce this exact hand, but it is the clearest illustration of the
+  // interaction: three matching dice scored once as a set, or twice.
+  const { loadCandidate, display: show } = await import('../dist/shall/execute/sandbox.js');
+  const { sources } = load('examples/dice-score.shall', CROSS_GENERATION);
+  const hand = { dice: [1, 1, 1, 2, 2] };
+  const answers = new Map();
+  for (const s of sources) {
+    let out;
+    try { out = show(loadCandidate(s.source).run(hand, 1000)); } catch { continue; }
+    const entry = answers.get(out) ?? [];
+    entry.push(s.label);
+    answers.set(out, entry);
+  }
+  const ranked = [...answers.entries()].sort((a, b) => b[1].length - a[1].length);
+
+  check('a hand of three matching dice splits them too', ranked.length > 1,
+    'no split on [1,1,1,2,2]');
+  console.log(`        ${dim('roll')}    ${JSON.stringify(hand.dice)}`);
+  for (const [value, who] of ranked) {
+    console.log(`        ${bold(String(value).padEnd(6))} ${dim(who.join(', '))}`);
+  }
 }
 
 console.log('');

@@ -45,3 +45,16 @@ jobs:
             fi
             echo "::endgroup::"
           done
+
+      # The page's numbers were hardcoded once and were wrong within a day.
+      # They are derived now, and this is what keeps them derived: regenerate
+      # and fail if the committed file no longer matches the recordings.
+      - name: The site's data is still what the recordings say
+        run: |
+          set -e
+          npm run site:data
+          if ! git diff --quiet -- site/data.json; then
+            echo "site/data.json is stale - run 'npm run site:data' and commit the result"
+            git --no-pager diff --stat -- site/data.json
+            exit 1
+          fi

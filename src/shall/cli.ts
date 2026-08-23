@@ -10,6 +10,7 @@ import { compileEnsemble } from './compile/compiler.js';
 import { structuralProbes, parseGeneratedProbes, PROBE_INSTRUCTIONS } from './oracle/probes.js';
 import { runDifferential, buildVerdict } from './oracle/differential.js';
 import { measureCoverage } from './coverage/coverage.js';
+import { targetedProbes, boundaries, isStraddled } from './coverage/targeted.js';
 import { minimiseWitness } from './oracle/minimise.js';
 import { canonical as canonicalOutcome, display as displayOutcome } from './execute/sandbox.js';
 import { suggestRewrites, applyRewrite } from './suggest/suggest.js';
@@ -233,6 +234,14 @@ async function analyse(file: string, flags: Flags) {
     }
   }
 
+  // Coverage-guided generation, last, so it can see everything already planned
+  // and only fill what is genuinely missing. Structural probes are built from
+  // the interface and know nothing about what the clauses say, which is why
+  // they can leave a stated boundary untouched - and a boundary is exactly
+  // where two readers are most likely to part company.
+  const targeted = targetedProbes(program, probes, Math.max(8, Math.round(probeLimit * 0.15)));
+  probes = [...probes, ...targeted];
+
   const compiled = await compileEnsemble({
     program,
     ensemble: fullyRecorded ? config.ensemble : (roster.usable.length ? roster.usable : config.ensemble),
@@ -295,6 +304,7 @@ async function analyse(file: string, flags: Flags) {
   // that never engaged a clause says nothing about that clause, and the report
   // should not let a green result imply otherwise.
   const coverage = measureCoverage(program, probes);
+  const bounds = boundaries(program, probes);
   const vagueness = lintVagueness(program);
   // Arithmetic artefacts must never implicate a clause.
   const attributions = attribute(program, oracle.behaviourDivergences, probes);
@@ -310,7 +320,7 @@ async function analyse(file: string, flags: Flags) {
       ? attributePairs(program, oracle.behaviourDivergences, probes)
       : [];
 
-  return { program, config, oracle, verdict, coverage, vagueness, attributions, pairs, compiled, root };
+  return { program, config, oracle, verdict, coverage, bounds, targeted, vagueness, attributions, pairs, compiled, root };
 }
 
 /**
@@ -372,7 +382,7 @@ async function runConformance(
 }
 
 async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<number> {
-  const { program, config, oracle, verdict, coverage, vagueness, attributions, pairs, compiled, root } =
+  const { program, config, oracle, verdict, coverage, bounds, targeted, vagueness, attributions, pairs, compiled, root } =
     await analyse(file, flags);
 
   if (flags.json) {
@@ -407,6 +417,13 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
               line: r.criterion.line,
               text: r.criterion.raw,
             })),
+            boundaries: bounds.map((b) => ({
+              criterion: b.criterion.id,
+              field: b.field,
+              at: b.at,
+              straddled: isStraddled(b),
+            })),
+            targetedProbes: targeted.length,
             criteria: coverage.criteria.map((r) => ({
               criterion: r.criterion.id,
               engaged: r.engaged,
@@ -425,7 +442,7 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
   if (!verdict.ok) {
     process.stdout.write(
       renderAmbiguity({
-        program, oracle, coverage, attributions, pairs, vagueness,
+        program, oracle, coverage, bounds, targeted: targeted.length, attributions, pairs, vagueness,
         failures: compiled.failures,
         reason: verdict.reason,
       }),
@@ -454,7 +471,7 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
 
   process.stdout.write(
     renderSuccess({
-      program, oracle, coverage, vagueness,
+      program, oracle, coverage, bounds, targeted: targeted.length, vagueness,
       failures: compiled.failures,
       outputPath: blocked
         ? '(blocked: the program contradicts the specification)'

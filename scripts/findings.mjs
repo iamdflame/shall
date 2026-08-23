@@ -17,6 +17,7 @@ import { buildCompilerInput } from '../dist/shall/compile/prompt.js';
 import { readRecording, readManifest } from '../dist/shall/compile/recordings.js';
 import { structuralProbes } from '../dist/shall/oracle/probes.js';
 import { runDifferential, buildVerdict } from '../dist/shall/oracle/differential.js';
+import { boundaries, isStraddled, targetedProbes } from '../dist/shall/coverage/targeted.js';
 
 const ROOT = process.cwd();
 const NO_COLOR = Boolean(process.env.NO_COLOR);
@@ -260,7 +261,67 @@ console.log('');
   }
 }
 
+/* ── Finding 5 ─────────────────────────────────────────────────────────── */
+
+console.log(bold('  FINDING 5  ') + 'The probes that find ambiguity are the ones the requirements ask for');
+console.log(dim('  Probes derived from the interface know the shape of the inputs and nothing about'));
+console.log(dim('  what the clauses say, so they can leave a stated boundary untouched. Reading the'));
+console.log(dim('  boundary out of the requirement and probing it finds a split nothing else did.'));
 console.log('');
+
+{
+  const path = 'examples/dice-score.shall';
+  const program = parseShall(readFileSync(path, 'utf8'), path).program;
+  const base = structuralProbes(program, 96);
+
+  const five = boundaries(program, base).find((b) => b.at === 5 && b.field === 'dice');
+  check('the specification states a boundary at five dice', Boolean(five));
+  check('and no interface-derived probe ever goes above it',
+    Boolean(five) && five.above === false,
+    'a structural probe already holds six dice');
+
+  const made = targetedProbes(program, base, 24);
+  const six = made.find((p) => Array.isArray(p.input.dice) && p.input.dice.length === 6);
+  check('so one probe is synthesised to sit just above it', Boolean(six),
+    `${made.length} targeted probes, none with six dice`);
+
+  const { loadCandidate, display: show } = await import('../dist/shall/execute/sandbox.js');
+  const { sources } = load(path, CROSS_GENERATION);
+
+  const readAt = (dice) => {
+    const answers = new Map();
+    for (const s of sources) {
+      let out;
+      try { out = show(loadCandidate(s.source).run({ dice }, 1000)); } catch { continue; }
+      answers.set(out, [...(answers.get(out) ?? []), s.label]);
+    }
+    return [...answers.entries()].sort((a, b) => b[1].length - a[1].length);
+  };
+
+  const atFive = readAt([1, 1, 1, 1, 1]);
+  const atSix = readAt([1, 1, 1, 1, 1, 1]);
+
+  check('five dice showing the same face: every reader agrees', atFive.length === 1,
+    `${atFive.length} readings`);
+  check('six dice showing the same face: they do not', atSix.length > 1,
+    'no split at six');
+  check('and the disagreement is three-way, not two', atSix.length >= 3,
+    `${atSix.length} readings`);
+
+  console.log('');
+  for (const [dice, ranked] of [[[1, 1, 1, 1, 1], atFive], [[1, 1, 1, 1, 1, 1], atSix]]) {
+    console.log(`        ${dim('roll')}    ${JSON.stringify(dice)}  ${ranked.length === 1 ? dim('unanimous') : amber(`${ranked.length} readings`)}`);
+    for (const [value, who] of ranked) {
+      console.log(`        ${bold(String(value).padEnd(6))} ${dim(who.join(', '))}`);
+    }
+  }
+  console.log('');
+  console.log(dim('  Nobody wrote that probe. The requirement did: "IF five dice show the same'));
+  console.log(dim('  face" says where it turns, and the tool asked what happens one step past it.'));
+}
+
+console.log('');
+
 if (failures > 0) {
   console.log(`  ${red(`${failures} finding(s) failed to reproduce`)}`);
   process.exit(1);

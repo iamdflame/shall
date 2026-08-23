@@ -1,5 +1,7 @@
 import type { Program } from '../lang/types.js';
 import type { CoverageReport } from '../coverage/coverage.js';
+import type { Boundary } from '../coverage/targeted.js';
+import { isStraddled } from '../coverage/targeted.js';
 import type { OracleResult, Divergence } from '../oracle/differential.js';
 import type { Attribution, VaguenessWarning, PairAttribution } from '../attribute/attribute.js';
 import type { CompileFailure } from '../compile/compiler.js';
@@ -109,6 +111,9 @@ function diagnostic(
 export interface AmbiguityReportInput {
   program: Program;
   coverage: CoverageReport;
+  bounds: Boundary[];
+  /** How many probes coverage-guided generation added to the run. */
+  targeted: number;
   oracle: OracleResult;
   attributions: Attribution[];
   pairs?: PairAttribution[];
@@ -118,7 +123,7 @@ export interface AmbiguityReportInput {
 }
 
 export function renderAmbiguity(input: AmbiguityReportInput): string {
-  const { program, oracle, coverage, attributions, pairs = [], vagueness, failures, reason } = input;
+  const { program, oracle, coverage, bounds, targeted, attributions, pairs = [], vagueness, failures, reason } = input;
   const out: string[] = [];
 
   out.push('');
@@ -182,7 +187,9 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
 
   // Worth saying even here. An author about to edit one clause should know if
   // half the others were never tested either, so the next run is not a surprise.
-  if (coverage.unexercised.length > 0) out.push(...renderCoverage(program, coverage));
+  if (coverage.unexercised.length > 0 || bounds.some((b) => !isStraddled(b))) {
+    out.push(...renderCoverage(program, coverage, bounds, targeted));
+  }
 
   if (failures.length > 0) {
     out.push(dim(RULE));
@@ -213,7 +220,12 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
  *
  * So the number is always printed, not only when it is bad.
  */
-export function renderCoverage(program: Program, coverage: CoverageReport): string[] {
+export function renderCoverage(
+  program: Program,
+  coverage: CoverageReport,
+  bounds: Boundary[] = [],
+  targeted = 0,
+): string[] {
   const out: string[] = [];
   const pct = Math.round(coverage.score * 100);
   const complete = coverage.unexercised.length === 0;
@@ -227,6 +239,34 @@ export function renderCoverage(program: Program, coverage: CoverageReport): stri
     )}`,
   );
   out.push('');
+
+  if (bounds.length > 0) {
+    // A clause can be engaged a hundred times and still never tested where it
+    // turns. Boundary coverage is the sharper number, so it is printed beside
+    // the other one rather than hidden behind a flag.
+    const straddled = bounds.filter(isStraddled).length;
+    const bpct = Math.round((straddled / bounds.length) * 100);
+    out.push(
+      `  ${bold('BOUNDARY COVERAGE')}       ${(straddled === bounds.length ? green : amber)(`${bpct}%`)} ${dim(
+        `- ${straddled}/${bounds.length} stated boundaries probed on both sides`,
+      )}`,
+    );
+    for (const b of bounds.filter((x) => !isStraddled(x)).slice(0, 4)) {
+      const missing = [!b.below && 'below', !b.on && 'at', !b.above && 'above'].filter(Boolean).join(' or ');
+      out.push(
+        `    ${amber('!')} ${dim(`criterion ${b.criterion.id} turns at ${b.at} on ${b.field}; nothing probed ${missing} it`)}`,
+      );
+    }
+    out.push('');
+  }
+
+  if (targeted > 0) {
+    out.push(
+      `  ${dim(`${targeted} probe(s) were synthesised to reach clauses and boundaries the`)}`,
+    );
+    out.push(`  ${dim('interface-derived probes did not.')}`);
+    out.push('');
+  }
 
   if (complete) {
     out.push(`    ${green('=')} ${dim('every criterion was exercised')}`);
@@ -253,6 +293,9 @@ export function renderCoverage(program: Program, coverage: CoverageReport): stri
 export interface SuccessReportInput {
   program: Program;
   coverage: CoverageReport;
+  bounds: Boundary[];
+  /** How many probes coverage-guided generation added to the run. */
+  targeted: number;
   oracle: OracleResult;
   vagueness: VaguenessWarning[];
   failures: CompileFailure[];
@@ -262,7 +305,7 @@ export interface SuccessReportInput {
 }
 
 export function renderSuccess(input: SuccessReportInput): string {
-  const { program, oracle, coverage, vagueness, failures, outputPath, cachedCount, usage } = input;
+  const { program, oracle, coverage, bounds, targeted, vagueness, failures, outputPath, cachedCount, usage } = input;
   const out: string[] = [];
 
   out.push('');
@@ -279,7 +322,7 @@ export function renderSuccess(input: SuccessReportInput): string {
   }
   out.push('');
 
-  out.push(...renderCoverage(program, coverage));
+  out.push(...renderCoverage(program, coverage, bounds, targeted));
 
   if (vagueness.length > 0) {
     out.push(dim(RULE));

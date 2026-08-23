@@ -167,7 +167,7 @@ export function vocabulary(program: Program): Map<string, Set<string>> {
 
   for (const criterion of programCriteria(program)) {
     const clause = terms(criterion.raw);
-    const named = inputNames.filter((i) => [...i.words].some((w) => clause.has(w)));
+    const named = inputNames.filter((i) => namesField(criterion.raw, i.field));
     if (named.length !== 1) continue;
 
     const field = named[0]!;
@@ -185,6 +185,25 @@ export function vocabulary(program: Program): Map<string, Set<string>> {
   // is not an alias, it is a coincidence. Drop it rather than link both.
   for (const [word, fields] of aliases) if (fields.size > 1) aliases.delete(word);
   return aliases;
+}
+
+/**
+ * Does this clause name this input?
+ *
+ * Term overlap handles the ordinary case, including plurals and camelCase. But
+ * `terms` drops words of two characters or fewer as noise, which is right for
+ * prose and wrong for identifiers: an input legitimately called `n` or `id`
+ * would be invisible to every check built on top of it. A declared name is
+ * never noise, so it is also matched directly as a whole word.
+ */
+export function namesField(clause: string, field: string): boolean {
+  const clauseTerms = terms(clause);
+  if ([...terms(field)].some((t) => clauseTerms.has(t))) return true;
+  return new RegExp(`(?:^|[^A-Za-z0-9_])${escapeRegExp(field)}(?:$|[^A-Za-z0-9_])`, 'i').test(clause);
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /* ── walking values ────────────────────────────────────────────────────── */
@@ -235,7 +254,7 @@ function isDefault(value: unknown): boolean {
  * "THE SYSTEM SHALL ..." - the response is the only text there is, and it does
  * describe which inputs the rule applies to, so it is used.
  */
-function guardOf(criterion: Criterion): string {
+export function guardOf(criterion: Criterion): string {
   const { trigger, condition, state, context, response } = criterion.clauses;
   const guards = [trigger, condition, state, context].filter(Boolean) as string[];
   return guards.length > 0 ? guards.join(' ') : response;
@@ -284,7 +303,8 @@ export function engagedPaths(
   for (const field of program.interface.inputs) {
     for (const leaf of leaves(probe.input[field.name], field.type, field.name)) {
       const named = [...terms(leaf.name)].some((t) => clauseTerms.has(t)) ||
-        [...terms(field.name)].some((t) => clauseTerms.has(t)) ||
+        namesField(criterion.raw, leaf.name) ||
+        namesField(criterion.raw, field.name) ||
         viaVocab.has(field.name);
 
       if (named && !isDefault(leaf.value)) {
@@ -298,6 +318,78 @@ export function engagedPaths(
   }
 
   return [...new Set(hits)];
+}
+
+/**
+ * Comparison wording, which is what turns a number into a boundary.
+ *
+ * Placed before the number ("shorter than three") or after it ("three or
+ * more"). Both forms are common in requirements and both mean the same thing.
+ */
+const BEFORE = String.raw`(?:at\s+least|at\s+most|no\s+(?:more|less|fewer)\s+than|more\s+than|less\s+than|fewer\s+than|greater\s+than|shorter\s+than|longer\s+than|larger\s+than|smaller\s+than|up\s+to|below|above|under|over|beyond|exceeds?|exceeding|minimum\s+of|maximum\s+of|>=?|<=?)`;
+const AFTER = String.raw`(?:or\s+(?:more|fewer|less|greater|higher|lower)|and\s+(?:above|below|over|under))`;
+const NUM = String.raw`(-?\d+(?:\.\d+)?|[a-z]+)`;
+
+/**
+ * The boundaries a clause states.
+ *
+ * Every number in a guard is one: a guard exists to say when the rule applies,
+ * so "IF five dice show the same face" turns at five. Outside a guard, only a
+ * number wearing comparison wording qualifies. "SHALL ignore words shorter than
+ * three letters" states a boundary at three even though it has no IF; "SHALL
+ * score each die showing one as fifty points" states none, because the fifty is
+ * what it pays out. Treating that fifty as a threshold would send probe
+ * generation chasing a fifty-element list to satisfy a rule about one die.
+ */
+export function guardNumbers(criterion: Criterion): number[] {
+  const { trigger, condition, state, context, response } = criterion.clauses;
+  const guard = [trigger, condition, state, context].filter(Boolean).join(' ');
+
+  const found = numbersIn(guard);
+  for (const re of [
+    new RegExp(`${BEFORE}\\s+${NUM}`, 'gi'),
+    new RegExp(`${NUM}\\s+${AFTER}`, 'gi'),
+  ]) {
+    for (const m of `${guard} ${response}`.matchAll(re)) {
+      const token = m[1]!;
+      const value = /^-?\d/.test(token) ? Number(token) : NUMBER_WORDS[token.toLowerCase()];
+      if (value !== undefined && Number.isFinite(value)) found.push(value);
+    }
+  }
+
+  return [...new Set(found)];
+}
+
+/**
+ * Which top-level inputs a clause refers to, by name or through the learned
+ * vocabulary. Used to decide what a targeted probe should vary.
+ */
+export function referencedFields(
+  criterion: Criterion,
+  program: Program,
+  vocab: Map<string, Set<string>> = vocabulary(program),
+): string[] {
+  const clauseTerms = terms(criterion.raw);
+  const hits = new Set<string>();
+
+  for (const field of program.interface.inputs) {
+    if (namesField(criterion.raw, field.name)) hits.add(field.name);
+    // Field names inside a record are part of how a clause can name an input.
+    for (const inner of fieldNames(field.type)) {
+      if ([...terms(inner)].some((t) => clauseTerms.has(t))) hits.add(field.name);
+    }
+  }
+  for (const term of clauseTerms) {
+    for (const field of vocab.get(term) ?? []) hits.add(field);
+  }
+
+  return [...hits];
+}
+
+function fieldNames(type: ShallType): string[] {
+  if (isRecordType(type)) return type.record.flatMap((f) => [f.name, ...fieldNames(f.type)]);
+  if (isListType(type)) return fieldNames(type.list);
+  return [];
 }
 
 /* ── fallback clauses ──────────────────────────────────────────────────── */

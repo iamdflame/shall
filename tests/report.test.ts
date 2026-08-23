@@ -10,6 +10,7 @@ import { renderAmbiguity, renderConformance } from '../dist/shall/report/termina
 import { checkConformance } from '../dist/shall/conform/check.js';
 import { deriveExpectations } from '../dist/shall/conform/expectations.js';
 import { measureCoverage } from '../dist/shall/coverage/coverage.js';
+import { boundaries } from '../dist/shall/coverage/targeted.js';
 
 const program = parseShall(readFileSync('examples/word-count.shall', 'utf8'), 'examples/word-count.shall').program!;
 
@@ -73,6 +74,8 @@ function ambiguityReport(): string {
     program,
     oracle,
     coverage: measureCoverage(program, probes),
+    bounds: boundaries(program, probes),
+    targeted: 0,
     attributions: attribute(program, oracle.divergences, probes),
     vagueness: lintVagueness(program),
     failures: [],

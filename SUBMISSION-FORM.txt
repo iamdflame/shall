@@ -486,6 +486,93 @@ reports the estimate and which readers are reachable before anything is spent.
 
 
 ================================================================================
+FIELD 11 — BRIEFLY EXPLAIN HOW KIRO WAS USED
+================================================================================
+----------------------------------------------------------------- copy from here
+
+Kiro is not incidental to this project. It is the substrate the product operates
+on: .kiro/ is SHALL's runtime input, not build residue left over from generating
+code once.
+
+SPEC-DRIVEN THROUGHOUT. The repository holds four spec folders and 50 EARS
+acceptance criteria — shall-language (25 criteria, with design.md recording the
+reasoning behind each architectural decision and tasks.md tracing 49 tasks to
+the
+requirements they satisfy), plus offline-replay (9), disambiguation (10) and
+multi-vendor-ensemble (6). Each subsystem was specified before it was built.
+
+STEERING SHAPED THE CODE. Three steering documents load into every interaction.
+tech.md encodes the hard one-runtime-dependency rule and the provider boundary
+that keeps vendor code confined to a single module. structure.md encodes the
+layering rule that modules never reach upward. Both are visible in the result:
+the project has exactly one runtime dependency, and no layer imports a vendor
+SDK
+outside provider/.
+
+HOOKS CLOSE THE LOOP. Three agent hooks: re-verify the repository on any source
+save; lint any .shall file on save, which needs no API key and so is free to run
+every time; and, when a requirements document changes, prompt the agent to
+re-verify, because editing a criterion voids its previous proof.
+
+THE SPECS ARE ENFORCED, NOT DECORATIVE. Every one of those 50 criteria carries a
+@shall annotation on the code that implements it and on the test that proves it.
+"npm run verify" runs the suite, joins each result back to the criterion it
+proves, and currently reports 50 of 50. A judge can run that command and watch
+the repository check itself against its own Kiro specification.
+
+AND THE PRODUCT CONSUMES KIRO'S FORMAT. A .shall program is written in the same
+EARS acceptance-criteria syntax Kiro generates. SHALL exists to answer a
+question
+Kiro's own workflow raises but cannot answer: whether the requirements document
+actually says one thing before an agent silently decides for you.
+
+Writing the three newer specs immediately found two real defects. Adding a
+second
+spec made every bare "@shall 1.1" ambiguous across specs — the tool's own
+ambiguity guard firing on its own repository — and the binding scanner stopped
+at
+the first line beneath an annotation, so where several criteria were proven by
+one test only the last one bound. Both are fixed and covered by tests. Writing
+the specs was not paperwork; it surfaced bugs.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 12 — CONFIRM KIRO CRITERIA IS MET  (three checkboxes)
+================================================================================
+
+  [x]  The repository includes the .kiro directory at the root.
+
+       VERIFIED on the public remote. github.com/iamdflame/shall/tree/main/.kiro
+       contains hooks/, specs/ and steering/. Run "npm run kiro" to print the
+       tree with its criteria counts.
+
+  [x]  The README explains meaningful Kiro usage.
+
+       VERIFIED. The README has a "How Kiro is used" section covering all four
+       spec folders, the three steering documents, the three agent hooks, the
+       @shall binding scheme, and the "npm run verify" output showing 50 of 50.
+
+  [ ]  The demo video explains meaningful Kiro usage.
+
+       YOU MUST CONFIRM THIS ONE YOURSELF — I cannot watch the video.
+
+       The scripted segment at 01:50 covers it: the .kiro tree on screen, then
+       "npm run verify" reaching 50/50, narrated as "fifty acceptance criteria,
+       across four Kiro specs, each one bound to the code that implements it and
+       the test that proves it. One command checks all of them. SHALL verifies
+       itself."
+
+       Open https://youtu.be/peMdu3rn8Yc at 1:50 and check that segment is
+       actually in the cut. If it is, tick the box. If it was trimmed, do not
+       tick it — re-record that 25 seconds and re-upload instead. This is a
+              stated eligibility requirement, and a box ticked for a segment
+       that is not
+       in the video is the kind of thing that gets a submission disqualified.
+
+================================================================================
 VERIFIED FIGURES (for your reference, not a form field)
 ================================================================================
 

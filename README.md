@@ -380,10 +380,12 @@ no timers, and a wall-clock timeout.
 `.kiro/` is not build residue here; it is the contract this repository is held
 to, continuously.
 
-- **[`specs/shall-language/`](.kiro/specs/shall-language/)** — `requirements.md`
-  (25 EARS criteria across 6 requirements), `design.md` (architecture and the
-  reasoning behind each decision, including the two findings above), `tasks.md`
-  (49 tasks traced to the requirements they satisfy).
+- **Four spec folders, 50 EARS acceptance criteria.**
+  [`shall-language/`](.kiro/specs/shall-language/) (25 criteria, plus `design.md`
+  recording the reasoning behind each decision and `tasks.md` tracing 49 tasks to
+  the requirements they satisfy), [`offline-replay/`](.kiro/specs/offline-replay/)
+  (9), [`multi-vendor-ensemble/`](.kiro/specs/multi-vendor-ensemble/) (6) and
+  [`disambiguation/`](.kiro/specs/disambiguation/) (10).
 - **[`steering/`](.kiro/steering/)** — `product.md`, `tech.md`, `structure.md`,
   loaded into every Kiro interaction. `tech.md` encodes the one-dependency rule
   and the provider boundary; `structure.md` encodes the layering rule.
@@ -392,8 +394,9 @@ to, continuously.
   save (free, no API key), and prompt for re-verification when a requirement
   changes, because editing a criterion voids its previous proof.
 
-Every one of those 25 criteria is bound to the code implementing it and the test
-proving it:
+Every one of those 50 criteria is bound — by a `@shall <spec>/<id>` annotation —
+to the code that implements it and the test that proves it, and one command
+checks all of them:
 
 ```console
 $ npm run verify
@@ -406,6 +409,12 @@ shall verify - this repository against its own specification
 
   + 50 conformant
 ```
+
+Writing the three newer specs immediately found two real defects. Adding a second
+spec made every bare `@shall 1.1` ambiguous across specs — the tool's own
+ambiguity guard firing on its own repository — and the binding scanner stopped at
+the first line beneath an annotation, so where several criteria are proven by one
+test only the last one bound. Both are fixed and covered by tests.
 
 ---
 

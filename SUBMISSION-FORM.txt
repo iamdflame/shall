@@ -573,6 +573,159 @@ FIELD 12 — CONFIRM KIRO CRITERIA IS MET  (three checkboxes)
        in the video is the kind of thing that gets a submission disqualified.
 
 ================================================================================
+FIELD 13 — THIRD-PARTY APIs, DATASETS, LIBRARIES OR ASSETS
+================================================================================
+----------------------------------------------------------------- copy from here
+
+LIBRARIES
+
+  openai  (npm, version 7.5.0, Apache-2.0)
+  The only runtime dependency. Used for the ensemble compiler, and also for
+  every other vendor: Anthropic, Google, Groq, DeepSeek, Mistral, OpenRouter,
+  Together and a local Ollama all expose OpenAI-compatible endpoints, so one
+  client reaches all of them without a second package.
+
+  typescript and @types/node  (Apache-2.0 and MIT)
+  Development only. Not shipped, not needed at runtime.
+
+  A production install brings in exactly one package. Everything else is the
+  Node standard library: node:vm for the sandbox, node:crypto for cache keys,
+  node:child_process for the test runner, node:fs and node:path.
+
+  There is no framework, no bundler, no test framework, no assertion library and
+  no HTTP server dependency. Tests use the built-in node:test runner. The
+  website is plain HTML, CSS and JavaScript with no build step.
+
+THIRD-PARTY APIs
+
+  OpenAI API
+  Used for the ensemble compiler, the adversarial probe generator, the
+  expectation deriver and "shall suggest". The default roster is six models
+  spanning generations: gpt-4o, gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-luna and
+  gpt-5.6-terra.
+
+  IMPORTANT: judges do not need this. Every bundled example ships its recorded
+  ensemble, committed to the repository, so all evaluation runs offline for
+  free. The API is only touched by "--live" and by "shall suggest".
+
+  Any OpenAI-compatible vendor (optional)
+  Anthropic, Google Gemini, Groq, DeepSeek, Mistral, OpenRouter, Together and
+  Ollama are supported and their base URLs are in the source, but none is
+  contacted unless the matching environment variable is set. With no keys
+  present, nothing is called.
+
+DATASETS
+
+  None. There is no training data, no downloaded corpus and no external
+  dataset of any kind.
+
+  The seven example specifications in examples/ were written for this project.
+  The probe inputs are generated deterministically at runtime from the type
+  signature and from the numeric literals in the specification itself — they
+  are computed, not sourced.
+
+  recordings/ contains 47 verbatim model outputs from real API calls made during
+  development, committed so that anyone can replay them. That is a record of
+  this project's own runs, not a third-party dataset.
+
+FONTS
+
+  Spectral, IBM Plex Mono and IBM Plex Sans, served by Google Fonts.
+  Spectral is licensed under the SIL Open Font License; the IBM Plex family is
+  licensed under the SIL Open Font License. Used on the website and to render
+  the logo and video assets.
+
+ASSETS
+
+  All original. The logo, the wordmark lockup, the video end card and the
+  YouTube thumbnail were designed for this project and are in assets/. Each PNG
+  is generated from an HTML file committed beside it, so all of them can be
+  regenerated from source.
+
+  No stock images, icons, illustrations, templates or purchased assets were
+  used anywhere.
+
+SERVICES USED TO PRODUCE THE SUBMISSION (not part of the product)
+
+  ElevenLabs — text-to-speech for the demo video narration.
+  Vercel — static hosting for the project site.
+  YouTube — hosting for the demo video.
+  Kiro — the agentic IDE this project was specified and built with.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 14 — PAID SERVICES, RATE LIMITS, OR SETUP REQUIREMENTS
+================================================================================
+----------------------------------------------------------------- copy from here
+
+NOTHING IN THE EVALUATION PATH COSTS MONEY OR NEEDS AN ACCOUNT.
+
+This is the single most important line in this answer, so it is first. Judges
+need no API key, no account, no credentials and no payment to verify every claim
+in this submission. Every bundled example ships its recorded ensemble — the
+verbatim output of a real six-model run, committed to the repository — so
+"shall check", "npm run findings", "npm run verify", "npm test" and "shall lint"
+all run offline and free.
+
+SETUP REQUIREMENTS
+
+  Node.js version 20 or newer. That is the only prerequisite.
+
+  No database, no Docker, no services to start, no environment variables, no
+  configuration file, and no account anywhere.
+
+  Three commands:
+      git clone https://github.com/iamdflame/shall && cd shall
+      npm install && npm run build
+      npm run install-cli
+
+  Please use "npm run install-cli", not "npm link". On most Linux installs npm's
+  global prefix is a system directory and "npm link" fails with a permissions
+  error. install-cli writes a small wrapper into ~/.local/bin and needs no sudo.
+  If you would rather not touch your PATH at all, every "shall ..." command also
+  works as "node dist/shall/cli.js ...".
+
+  A production install brings in one package. Install takes a few seconds.
+
+PAID SERVICES — ONLY IF YOU CHOOSE TO RUN LIVE
+
+  An OpenAI API key is required only for two things: "--live", which re-asks the
+  models instead of replaying, and "shall suggest", which proposes rewrites.
+  Neither is needed to evaluate the project.
+
+  If you do want to run live, a single example costs roughly 0.02 to 0.05 US
+  dollars — six model calls plus one probe-generation call. Run
+  "shall check <file> --dry-run" first: it reports the estimated token usage and
+  which readers are actually reachable with your key, before anything is spent.
+
+  Any OpenAI-compatible vendor works instead — set ANTHROPIC_API_KEY,
+  GEMINI_API_KEY, GROQ_API_KEY or another and that vendor joins the roster.
+  Readers whose vendor has no key are dropped and reported rather than failing
+  the run.
+
+RATE LIMITS
+
+  None apply to the evaluation path, because it makes no network calls at all.
+
+  If you run live, the six readers are called concurrently, which is six
+  requests. On a new OpenAI account at the lowest tier this can hit a
+  requests-per-minute limit. A rate-limited reader is reported by name and
+  dropped rather than crashing the run — and if fewer readers survive than the
+  quorum, the build is refused rather than reporting a false consensus over too
+  few readers.
+
+  The website and the demo video have no rate limits and need no account.
+
+COSTS ALREADY PAID BY US, NOT BY YOU
+
+  The 47 committed recordings were produced with our own OpenAI credits during
+  development. That expense is exactly what makes evaluation free: the results
+  are captured once and replayed by anyone, forever, at no cost.
+
+================================================================================
 VERIFIED FIGURES (for your reference, not a form field)
 ================================================================================
 

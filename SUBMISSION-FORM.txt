@@ -1,0 +1,505 @@
+================================================================================
+READY, SPEC, SHIP — SUBMISSION FORM ANSWERS
+================================================================================
+
+Plain text, built for the Google Form. No markdown tables, no pipes, no
+backticks, no asterisks — the form renders none of them, and its font is
+proportional so space-aligned columns will not line up either.
+
+Copy each block between the ---- markers into its matching field.
+
+Verified on the submitted commit: 148 tests, 50/50 criteria, 18 commits.
+
+
+
+================================================================================
+FIELD 1 — PROJECT DESCRIPTION
+================================================================================
+----------------------------------------------------------------- copy from here
+
+SHALL is a programming language whose source code is English requirements, and a
+compiler that refuses to build when those requirements do not say one thing.
+
+A .shall program is a specification: a type signature and a set of acceptance
+criteria written in EARS — exactly the format Kiro generates. There is no
+implementation file.
+
+To compile it, SHALL sends the specification to an ensemble of independent
+language models. Each is given byte-identical instructions. None is told the
+others exist. Every program they write is then executed against the same
+generated inputs inside an isolated sandbox, and the results are compared.
+
+If every reader produced the same behaviour, the English determined the program,
+and SHALL emits it.
+
+If they split, the English did not determine it — and that is a compile error.
+It is reported the way a compiler reports one: the responsible sentence, the
+phrase underlined, and the smallest input that proves the disagreement.
+
+Consensus alone is not enough, so a second pass turns each clause back into test
+cases and runs the built program against them. Six readers can agree on
+behaviour nobody asked for. Agreement is not correctness, and the two are
+checked separately.
+
+The result answers a question nothing else answers: does this specification
+actually say one thing? Not "does a model think it is unclear" — that returns an
+opinion. SHALL returns a measurement, with the input that proves it attached.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 2 — WHAT PROBLEM DOES THE PROJECT SOLVE?
+================================================================================
+----------------------------------------------------------------- copy from here
+
+Spec-driven development assumes the specification means one thing. It very often
+means two, and nobody finds out until production behaves in a way nobody
+specified.
+
+Kiro, spec-kit and every agentic workflow built on requirements share the same
+unexamined premise: that the English handed to the model is determinate.
+Everything downstream — design docs, task lists, generated code, tests —
+inherits whatever the model happened to assume. When a requirement is
+underdetermined, that assumption is invisible, unrecorded, and only discovered
+when someone notices the software doing something no one asked for.
+
+This is not hypothetical. It is measured in the repository.
+
+Here is a complete specification. Two sentences. Read it and decide whether it
+is clear:
+
+     Requirement 1: Words
+       THE SYSTEM SHALL count the words in the text
+
+     Requirement 2: Significance
+       THE SYSTEM SHALL ignore words shorter than three letters
+
+Six models — gpt-4o, gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-luna and gpt-5.6-terra —
+were each given that specification and asked to implement it. They returned
+THREE behaviourally different programs. On these inputs they disagreed:
+
+  1.  "well-known state-of-the-art"
+      Four readers answered 5. Two answered 2.
+      Nobody said whether a hyphen separates words.
+
+  2.  "it's don't o'clock"
+      Four answered 2. Two answered 3.
+      Nobody said whether an apostrophe splits a token.
+
+  3.  "a1 22 333 4444"
+      Five answered 0. One answered 2.
+      Nobody said whether digits can be words.
+
+  4.  "one,two;three"
+      Four answered 3. Two answered 1.
+      Nobody said whether punctuation separates words.
+
+  5.  "ß Ünïcode naïve"
+      Four answered 1. Two answered 2.
+      Nobody said whether accented characters count as letters.
+
+  6.  "..."
+      Five answered 0. One answered 1.
+      Nobody said whether punctuation can be a three-letter word.
+
+Nobody wrote down what a "word" is. Every reader had to decide, each decided
+silently, and they did not decide the same way. In a normal spec-driven workflow
+one of those programs ships and the other readings are lost without trace.
+
+WHY EXISTING TOOLS DO NOT CATCH THIS
+
+  Property-based testing looks at running code and answers whether it behaves
+  correctly. The code has to exist first, so it is too late.
+
+  Spec correctness checking (including Kiro's own) looks at a spec and its code
+  and answers whether the code satisfies the spec. It assumes the spec means one
+  thing — the exact assumption in question.
+
+  Formal methods such as TLA+ or Alloy answer this rigorously, and charge you
+  the English to do it. You must abandon prose and write a model instead.
+
+  Asking a model "is this ambiguous?" returns an opinion, confidently, whether
+  or not the prose is actually underdetermined. It cannot show you.
+
+  SHALL takes prose alone and answers whether the English determines behaviour.
+  The cost is that it needs several genuinely independent readers.
+
+The row that matters is TLA+. Formal methods answer this rigorously and charge
+you the English. SHALL's bet is that you keep the English and measure it
+instead — weaker than a proof, and available to anyone who can write a
+requirement.
+
+THE COST OF BEING WRONG
+
+The bundled order-total example contains a genuine ordering ambiguity: whether a
+shipping threshold applies before or after a coupon. On a subtotal of 51 with
+a 6 percent
+coupon, the two readings differ by 6.48 — one returns 51.78, the other 58.26.
+That is a billing incident,
+written in a sentence that reads perfectly.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 3 — KEY FEATURES
+================================================================================
+----------------------------------------------------------------- copy from here
+
+1.  ENGLISH COMPILES TO A WORKING PROGRAM
+    A .shall file has exactly one formal construct — the interface — and
+    everything else is prose. The interface exists only because the oracle needs
+    a signature it can generate inputs for and compare outputs across.
+
+2.  DISAGREEMENT IS A COMPILE ERROR, WITH THE SENTENCE NAMED
+    Not "this might be unclear". The file and line, the phrase underlined, why
+    it is undefined, the concrete input that proves it, and which reader
+    returned what. Exit code 1, so it works in CI.
+
+3.  WITNESSES ARE MINIMISED
+    "well-known state-of-the-art" proves the readers disagree. "a-a" proves it
+    and leaves nothing else in the input to blame. Delta debugging shrinks each
+    witness, simplifying characters as well as deleting them — deletion alone
+    stalls at "ell-kno", which is short but still full of irrelevant detail.
+
+4.  BEHAVIOUR IS COMPARED, NEVER SOURCE CODE
+    Two correct implementations of one requirement routinely share no lines at
+    all; two differing by one operator can be behaviourally identical. Each
+    candidate runs against every probe and its results concatenate into a
+    behaviour vector. Identical vectors are the same program, whatever the code
+    looks like.
+
+5.  A PLURALITY SETTLES NOTHING
+    Four readers against two is still a compile error. A plurality is evidence
+    about which interpretation is more popular, which is precisely the question
+    a specification exists to answer.
+
+6.  PROBES ARE SPECIFICATION-AWARE, AND FREE
+    Three deterministic tiers: type-derived edge values, every numeric literal
+    the specification itself mentions plus its neighbours, and a dense sweep
+    when the budget is large. Half the budget is reserved for input
+    interactions, because an ambiguity needing two inputs to move together is
+    the most common kind and single-field variation can never witness it.
+
+7.  CONSENSUS IS CHECKED SEPARATELY FROM CORRECTNESS
+    After readers agree, each clause is turned back into test cases and the
+    built program is run against them. The expectations are themselves filtered
+    by agreement: several readers propose independently, and only ones they
+    agree on are kept. A case they cannot agree about is not evidence about the
+    program — it is more evidence about the prose, and is reported as disputed.
+
+8.  ORDERING AMBIGUITY IS ATTRIBUTED TO CLAUSE PAIRS
+    "No single clause is responsible" is a dead end. Ambiguity often lives
+    between two precise sentences — two rules, each unambiguous alone, silent
+    about which applies first. Candidate pairs are ranked by how much of the
+    disagreement they jointly account for, and the report says "neither says
+    which applies first", which an author can act on.
+
+9.  THE REPORT ENDS IN A DECISION
+    Each behaviour group is a coherent reading, so each is offered as a rewrite
+    with the input and output it produces. "shall suggest --apply 1" writes the
+    chosen sentence and immediately re-runs the check. The proposal is a model
+    call and is untrusted; the verification is the deterministic oracle.
+
+10. SOME DISAGREEMENT IS ARITHMETIC, NOT ENGLISH
+    0.1 + 0.2 and 0.3 are different numbers. Two readers who understood the
+    specification identically, differing only in multiplication order, were
+    being reported as an ambiguous specification pointing at an innocent clause.
+    Divergences are now classified, and float-only splits are reported
+    separately without failing the build. Catastrophic cancellation is
+    deliberately excluded from that class — calling it equivalent would be the
+    tool lying.
+
+11. UNTRUSTED CODE, PROPERLY SANDBOXED
+    Candidates are model-generated and unreviewed. They run in a fresh node:vm
+    context with JavaScript intrinsics and nothing else: no require, no process,
+    no fs, no fetch, no timers, and a wall-clock timeout. Each candidate is also
+    run forwards and backwards over the probe set; if it carried state between
+    calls the two vectors disagree, and it is excluded and named as
+    non-deterministic rather than silently averaged into the result.
+
+12. EVERYTHING REPLAYS FOR FREE
+    Every bundled example ships its recorded ensemble — the verbatim output of a
+    real run against six models, committed and stamped with its date. Replaying
+    costs nothing and reproduces exactly what the author saw. It is never
+    presented as a live run: the banner states it is a replay and when it was
+    recorded, and --live re-asks the models for real.
+
+13. ANY VENDOR, WITHOUT A NEW DEPENDENCY
+    Anthropic, Google, Groq, DeepSeek, Mistral, OpenRouter, Together and a local
+    Ollama all speak the OpenAI wire format, so one compatible client reaches
+    all of them. Readers whose vendor has no key are dropped and reported, and a
+    roster that ends up single-vendor prints a standing note that same-vendor
+    readers share blind spots.
+
+14. THE REPOSITORY IS HELD TO ITS OWN KIRO SPECIFICATION
+    Four spec folders, 50 EARS acceptance criteria, each bound to the code that
+    implements it and the test that proves it. "npm run verify" checks all 50 on
+    demand and currently reports 50 of 50.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 4 — TARGET USERS
+================================================================================
+----------------------------------------------------------------- copy from here
+
+Anyone whose work starts with a written requirement and ends with software.
+
+ENGINEERS WORKING SPEC-FIRST — Kiro, spec-kit, or any agentic workflow.
+They find out that a requirement is underdetermined before an agent silently
+resolves it and builds everything else on top of that assumption.
+
+REVIEWERS AND TECH LEADS.
+A specification gains a machine-checkable property: it means one thing.
+"shall check" exits non-zero, so it can gate a pull request the same way a
+failing test does. A reviewer approving a spec today has no way to know whether
+it is determinate. This gives them one.
+
+PRODUCT MANAGERS AND BUSINESS ANALYSTS WRITING ACCEPTANCE CRITERIA.
+"shall lint" needs no API key and no engineering knowledge. It names open
+wording — word, sort, between, average, "the order" — and explains why each is
+undefined. It is free to run on every save.
+
+TEAMS IN REGULATED OR HIGH-CONSEQUENCE DOMAINS.
+Requirements ambiguity in billing, pricing, eligibility or scoring is an
+incident waiting to happen. The bundled order-total example is a 6.48
+discrepancy hidden inside one ordinary sentence.
+
+RESEARCHERS ON MODEL AGREEMENT AND EVALUATION.
+A reproducible harness for measuring inter-model behavioural agreement, with
+recordings committed so results can be re-run by anyone, at no cost.
+
+The immediate audience is the second group: the person who has to approve a
+specification and currently has nothing but their own reading to go on.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 5 — PROJECT TYPE
+================================================================================
+----------------------------------------------------------------- copy from here
+
+Developer tool (command-line).
+
+SHALL is a CLI compiler, a language, and a CI gate, published as a Node package
+with a public API, plus a static project site.
+
+If more than one category may be selected, it is also reasonably described as a
+programming language (.shall has a grammar, a parser and a compiler), a
+testing / QA tool (the oracle is differential testing over generated inputs),
+and AI / agent infrastructure (an ensemble compiler and evaluation harness).
+
+It is not a web application. The deployed site is the project page; the product
+is the CLI and the library.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 6 — PUBLIC REPOSITORY URL
+================================================================================
+----------------------------------------------------------------- copy from here
+
+https://github.com/iamdflame/shall
+
+------------------------------------------------------------------ copy to here
+
+(Public, MIT licensed, main branch, 18 commits.)
+
+
+
+================================================================================
+FIELD 7 — LIVE DEMO / DEPLOYED APP / TEST BUILD URL
+================================================================================
+----------------------------------------------------------------- copy from here
+
+https://shall-david-praises-projects.vercel.app
+
+------------------------------------------------------------------ copy to here
+
+(Deployment protection is off — it opens for anyone, signed in or not. The
+centrepiece is a witness explorer running on the real recorded measurements, not
+a mock-up: pick an input and see what each of the six readers actually returned.
+Because SHALL is a CLI, the truest live demo is the two-command replay described
+in the setup notes below — it runs the real tool, on your machine, with no key.)
+
+
+
+================================================================================
+FIELD 8 — DEMO VIDEO URL
+================================================================================
+----------------------------------------------------------------- copy from here
+
+https://youtu.be/peMdu3rn8Yc
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 9 — SETUP AND TESTING NOTES
+================================================================================
+----------------------------------------------------------------- copy from here
+
+EVERYTHING BELOW RUNS WITH NO API KEY AND SPENDS NOTHING.
+
+This matters enough to state plainly: you do not need an OpenAI key, an account,
+or any credentials to verify every claim in this submission. The recorded
+ensembles are committed to the repository.
+
+Requirements: Node.js 20 or newer. One runtime dependency. No database, no
+services, no Docker.
+
+SIXTY SECONDS, THREE COMMANDS
+
+    git clone https://github.com/iamdflame/shall && cd shall
+    npm install && npm run build
+    npm run install-cli
+
+Please use "npm run install-cli", NOT "npm link". On most Linux installs npm's
+global prefix is a system directory and npm link fails with a permissions error.
+install-cli writes a small wrapper into ~/.local/bin and needs no sudo.
+If you would rather not touch your PATH, every "shall ..." command below also
+works as "node dist/shall/cli.js ...".
+
+THE ONE COMMAND THAT SHOWS THE WHOLE THING
+
+    shall check examples/word-count.shall
+
+Expected: a replay banner, then AMBIGUOUS SPECIFICATION, the clause at line 10
+with the word "words" underlined, the minimal witness text = "a-a", and the six
+readers grouped by what each returned. Exit code 1. Takes about 2 seconds.
+
+THEN WATCH ONE SENTENCE FIX IT
+
+    shall check examples/word-count.fixed.shall
+
+Expected: UNAMBIGUOUS, six readers agreeing on all 33 probes, and
+CONFORMANCE 100 percent, 11 of 11 derived cases hold. Exit code 0. About 1
+second.
+
+REPRODUCE THE FOUR FINDINGS
+
+    npm run findings
+
+Expected: 12 checks pass in roughly 15 seconds, ending in "all findings
+reproduced — no API key, no spend". Progress is printed throughout, so it never
+looks stalled.
+
+VERIFY THE REPOSITORY AGAINST ITS OWN KIRO SPECIFICATION
+
+    npm run kiro       (what the .kiro package contains)
+    npm run verify     (check the code against it)
+
+Expected: the listing totals 50 criteria, and verify reports
+CONFORMANCE 100.0 percent, 50 of 50 criteria proven. The two numbers matching is
+the point. verify runs the full test suite and joins each result back to the
+criterion it proves, so it takes about 16 seconds.
+
+THE REST
+
+    npm test                                  148 tests, 18 files
+    shall lint examples/order-total.shall     static scan, no model, no key
+    shall check <file> --dry-run              what a real run would cost
+    shall suggest examples/word-count.shall   proposes rewrites (needs a key)
+    shall check <file> --live                 re-ask the models for real
+
+Only "suggest" and "--live" require a key. Nothing in the evaluation path does.
+
+CONTINUOUS INTEGRATION
+
+.github/workflows/ci.yml runs the tests, reproduces all four findings, verifies
+the repository against its own specification, and asserts every bundled example
+still resolves as recorded — all without secrets, because the recordings are
+committed. A second workflow, spec-gate.yml, is the adoption path: any .shall
+file changed in a pull request must lint and check before it can merge.
+
+A NOTE ON THE COMMIT HISTORY, RAISED RATHER THAN LEFT TO BE NOTICED
+
+The first commit contains the whole initial project. All of SHALL was built in a
+single continuous session and committed at the end rather than incrementally.
+Every commit after that is genuine incremental work. PROVENANCE.md in the
+repository states this plainly, lists the evidence that does exist — filesystem
+timestamps matching the task order in tasks.md, dated recordings containing real
+API responses, and the re-runnable findings — and is explicit about what it does
+not claim.
+
+KNOWN LIMITATIONS, STATED HONESTLY
+
+A tool about under-specification should not be under-specified itself.
+
+  Same-vendor readers share blind spots. The roster spans model generations,
+  which is better than sizes, but a second vendor would be better than both. The
+  multi-vendor provider is implemented and any OpenAI-compatible endpoint works,
+  but the cross-vendor delta is not yet measured — and that measurement would be
+  the most valuable finding this project could produce.
+
+  Consensus is not proof of correctness. The conformance pass narrows this but
+  relies on model-derived expectations filtered by agreement. A clause that all
+  readers misread the same way is reported as satisfied.
+
+  The interface is minimal: scalars and lists, one output. Records and optional
+  fields are not implemented.
+
+  Attribution is evidential, not causal. The engagement heuristic is lexical, so
+  it misses a clause referring to an input by a different word ("die" where the
+  input is "dice") — in that case the report honestly says no single clause is
+  responsible rather than guessing.
+
+  Recordings are a snapshot. A replay reproduces the run it captured, not what
+  those models would say today.
+
+  Compiled output is JavaScript. Nothing in the design is language-specific, but
+  nothing else is implemented.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+FIELD 10 — TEST CREDENTIALS
+================================================================================
+----------------------------------------------------------------- copy from here
+
+None required. There is no login, no account, no database and no hosted service.
+Everything is a local CLI plus a static site, and every bundled example replays
+from recordings committed to the repository.
+
+If you wish to run the ensemble live rather than replaying, use your own key:
+
+    echo 'OPENAI_API_KEY=sk-...' > .env
+    shall check examples/word-count.shall --live
+
+A live run of one example costs roughly 0.02 to 0.05 US dollars. "--dry-run"
+reports the estimate and which readers are reachable before anything is spent.
+
+------------------------------------------------------------------ copy to here
+
+
+
+================================================================================
+VERIFIED FIGURES (for your reference, not a form field)
+================================================================================
+
+  Tests                          148 passing, across 18 files
+  Acceptance criteria verified   50 of 50
+  Kiro specs                     4
+  Kiro agent hooks               3
+  Kiro steering documents        3
+  Recorded readers / programs    47 / 7
+  Source                         5,287 lines, 29 TypeScript files
+  Runtime dependencies           1
+  Example specifications         7
+  npm run findings               12 checks, about 15 seconds, no API key
+  Exit codes                     ambiguous 1, unambiguous 0, cannot run 2
+
+Every figure above was measured on the submitted commit.

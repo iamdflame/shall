@@ -46,11 +46,16 @@ AMBIGUOUS SPECIFICATION  WordCount
       engaged by 7/7 disagreeing inputs but only 15/16 agreeing ones
 
    WITNESS  text = "a-a"
-     also  text = "well-known state-of-the-art"
+   shrunk from  text = "well-known state-of-the-art"
 
-     5    gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra
-     2    gpt-4o, gpt-5.6-luna
+     0    gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-luna, gpt-5.6-terra
+     1    gpt-4o
 ```
+
+Five readers split `a-a` on the hyphen, get two one-letter words, discard both
+as shorter than three letters, and return **0**. One reader treats `a-a` as a
+single three-character word and returns **1**. Nothing in the specification says
+which is right — that is the whole report.
 
 Every bundled example ships with its **recorded ensemble** — the verbatim output
 of a real run against six models, committed to this repository and stamped with
@@ -105,10 +110,10 @@ One sentence. Ambiguous → unanimous. Both halves replay for free.
 ## Reproduce the findings
 
 ```bash
-npm run findings     # ten seconds, no API key, no spend
+npm run findings     # thirteen seconds, no API key, no spend
 ```
 
-Four findings, each re-run from the committed recordings rather than asserted:
+Five findings, each re-run from the committed recordings rather than asserted:
 
 | | Finding | Evidence |
 |---|---|---|
@@ -116,6 +121,7 @@ Four findings, each re-run from the committed recordings rather than asserted:
 | **2** | Human intuition about ambiguity is unreliable | A clause humans read two ways is unanimous at **5,000 probes**; a mundane one splits at 23 |
 | **3** | Some disagreement is arithmetic, not English | Two orderings of the same arithmetic differ by 1 ULP; reporting that as ambiguity blames an innocent clause |
 | **4** | Ambiguity hides *between* precise sentences | A dice-scoring spec the lint finds nothing wrong with still splits the readers, because two clauses never say which applies first |
+| **5** | The probes that find ambiguity are the ones the requirements ask for | Reading a boundary out of a clause and probing one step past it turns a two-way split into a **three-way** one — on an input no probe generator would have produced |
 
 Finding 1's evidence is the readers' own generated source:
 
@@ -166,11 +172,17 @@ program.shall
      │
      ├── probe ──────────► deterministic inputs, mined from your own thresholds
      │
+     ├── target ─────────► clauses nothing reached, boundaries nothing straddled
+     │                     get a probe written for them
+     │
      ├── execute ────────► sandboxed; results form a behaviour vector
      │
      ├── partition ──────► group by behaviour, never by source code
      │                       1 group  → consensus
      │                      >1 group  → COMPILE ERROR + clause + witness
+     │
+     ├── cover ──────────► which clauses ran, which stated boundaries were
+     │                     probed on both sides — reported either way
      │
      └── conform ────────► expectations derived per clause, run against the build
                              contradiction → COMPILE ERROR, nothing emitted
@@ -196,10 +208,10 @@ Node 20+. One runtime dependency.
 ```bash
 npm install && npm run build
 
-npm test          # 145 tests
-npm run findings  # reproduce all three findings, no API key
+npm test          # 193 tests
+npm run findings  # reproduce all five findings, no API key
 npm run kiro      # what the .kiro package contains
-npm run verify    # this repo against its own .kiro spec — 50/50
+npm run verify    # this repo against its own .kiro spec — 75/75
 ```
 
 To run against **your own** specifications you need a key, since nothing is
@@ -297,6 +309,92 @@ deliberately **not** absorbed into this class: `big - big*p` produces genuinely
 different numbers relative to a tiny result, and calling that equivalent would
 be the tool lying.
 
+### The probes that find ambiguity are the ones the requirements ask for
+
+Structural probes are derived from the interface. They know the shape of your
+inputs and nothing about what your clauses say — which is the right default, and
+also why they miss things.
+
+The dice specification says:
+
+```
+IF five dice show the same face THEN the system SHALL score two thousand instead
+```
+
+Every interface-derived probe topped out below six dice. So nothing ever asked
+what happens at six, and the split at six went unreported through every run.
+
+Coverage-guided generation reads the boundary out of the requirement, notices
+that no probe sits above it, and writes one:
+
+```
+dice = [1,1,1,1,1]     2000    all six readers agree
+dice = [1,1,1,1,1,1]    100    gpt-4o, o4-mini, gpt-5.2, gpt-5.6-terra
+                        250    gpt-4.1
+                        400    gpt-5.6-luna
+```
+
+A **three-way** split, on a specification previously reported as splitting two
+ways, from an input nobody wrote. The requirement wrote it: the clause says
+where it turns, and the tool asked what happens one step past.
+
+Deciding what counts as a boundary is the whole difficulty, and the EARS grammar
+answers it. Every number in a **guard** is one — a guard exists to say when a
+rule applies. Outside a guard, only a number wearing comparison wording
+qualifies:
+
+| Clause | Boundary | Why |
+|---|---|---|
+| `IF five dice show the same face` | **5** | in the guard |
+| `SHALL ignore words shorter than three letters` | **3** | "shorter than" |
+| `SHALL score each die showing one as fifty points` | *none* | fifty is what it pays out |
+
+That last row is not hypothetical. Reading the fifty as a threshold sent the
+generator chasing a fifty-element list to satisfy a rule about a single die.
+
+### Coverage, for requirements rather than lines
+
+A green build says the readers agreed on every probe. It does not say every
+clause was tested, and those are different claims. If no probe ever engaged
+clause 3.2, six readers agreeing tells you nothing whatsoever about clause 3.2.
+
+```
+  SPECIFICATION COVERAGE  100% - 6/6 criteria engaged by at least one of 96 probes
+  BOUNDARY COVERAGE       100% - 3/3 stated boundaries probed on both sides
+```
+
+Both numbers print on success, not only on failure — agreement should never be
+shown without its scope.
+
+Deciding whether a clause was *engaged* is a judgement, and both ways of being
+wrong are bad: over-count and coverage inflates until it means nothing;
+under-count and it cries wolf until nobody reads it. Four rules, each written
+because a plausible one failed:
+
+- **Stemming.** The check compared words literally, so a clause saying "each
+  remaining die" never matched an input named `dice`. Two of the five dice
+  criteria were invisible to attribution because of it.
+
+- **A learned vocabulary.** WordCount declares one input, `text`, then says
+  "ignore words shorter than three letters" — naming nothing. But requirement 1
+  already said "count the words in the text", binding the two in one sentence. A
+  clause naming exactly one input teaches its other nouns as aliases for it. The
+  vocabulary comes from your document, so it costs no domain knowledge.
+
+- **Response verbs excluded from that vocabulary.** EARS puts the response after
+  SHALL, so the following word is a verb by construction. Without this, "SHALL
+  return the amount" teaches that "return" means `amount`, and every clause
+  saying "return" looks engaged — 100% coverage on a specification nothing had
+  tested.
+
+- **Fallbacks resolved by complement.** "IF no rule above applies" names no
+  input by design, so no lexical check can ever engage it. It is engaged by
+  exactly the probes that engage nothing else — which is what it means, and a
+  stronger statement than matching could have made.
+
+Coverage and attribution read from one engagement matrix, so the two can never
+disagree about what a run exercised.
+
 ## Ending in a decision, not a complaint
 
 A report that says "this is ambiguous" leaves the author to guess which of
@@ -380,12 +478,14 @@ no timers, and a wall-clock timeout.
 `.kiro/` is not build residue here; it is the contract this repository is held
 to, continuously.
 
-- **Four spec folders, 50 EARS acceptance criteria.**
+- **Five spec folders, 75 EARS acceptance criteria.**
   [`shall-language/`](.kiro/specs/shall-language/) (25 criteria, plus `design.md`
   recording the reasoning behind each decision and `tasks.md` tracing 49 tasks to
-  the requirements they satisfy), [`offline-replay/`](.kiro/specs/offline-replay/)
-  (9), [`multi-vendor-ensemble/`](.kiro/specs/multi-vendor-ensemble/) (6) and
-  [`disambiguation/`](.kiro/specs/disambiguation/) (10).
+  the requirements they satisfy),
+  [`specification-coverage/`](.kiro/specs/specification-coverage/) (25),
+  [`disambiguation/`](.kiro/specs/disambiguation/) (10),
+  [`offline-replay/`](.kiro/specs/offline-replay/) (9) and
+  [`multi-vendor-ensemble/`](.kiro/specs/multi-vendor-ensemble/) (6).
 - **[`steering/`](.kiro/steering/)** — `product.md`, `tech.md`, `structure.md`,
   loaded into every Kiro interaction. `tech.md` encodes the one-dependency rule
   and the provider boundary; `structure.md` encodes the layering rule.
@@ -394,7 +494,13 @@ to, continuously.
   save (free, no API key), and prompt for re-verification when a requirement
   changes, because editing a criterion voids its previous proof.
 
-Every one of those 50 criteria is bound — by a `@shall <spec>/<id>` annotation —
+Writing the newest of those specifications caught the tool on its own document:
+a criterion read "exclude the verb following SHALL from that vocabulary", and
+`shall verify` rejected it as malformed, because a criterion carrying two SHALL
+clauses cannot pass or fail independently. It was right, and the criterion was
+rephrased.
+
+Every one of those 75 criteria is bound — by a `@shall <spec>/<id>` annotation —
 to the code that implements it and the test that proves it, and one command
 checks all of them:
 
@@ -404,10 +510,10 @@ $ npm run verify
 shall verify - this repository against its own specification
 ----------------------------------------------------------------
 
-  CONFORMANCE  100.0%  50/50 criteria proven
+  CONFORMANCE  100.0%  75/75 criteria proven
   ████████████████████████████████████████████████
 
-  + 50 conformant
+  + 75 conformant
 ```
 
 Writing the three newer specs immediately found two real defects. Adding a second
@@ -433,8 +539,25 @@ under-specified itself.
 - **Consensus is not proof of correctness.** The conformance pass narrows this
   but relies on model-derived expectations, filtered by agreement. A clause all
   readers misread the same way is reported as satisfied.
-- **The interface is minimal** — scalars and lists, one output. Records and
-  optional fields are not implemented.
+- **The interface covers scalars, lists and records**, nested arbitrarily, with
+  optional fields — but still one output. Unions, enums and recursive types are
+  not implemented.
+- **Engagement is a heuristic, and coverage inherits that.** It is stem-aware,
+  record-aware, and learns each document's own vocabulary, but it is still
+  matching words. A clause that refers to an input through a synonym the
+  document never binds ("the parcel is oversized") will read as unexercised. The
+  failure is visible — it names the clause it could not reach — which is the
+  most that can be claimed for it.
+- **A boundary must be stated as a number** to be found. "IF the parcel is
+  heavy" states a real boundary that nothing can probe, and the tool will not
+  pretend otherwise.
+- **examples/parcel-price.shall has no recorded ensemble**, so `shall check` on
+  it needs an API key. Everything about it that does not need a reader — the
+  record type, its probes, its boundary — is asserted in the test suite.
+- **Coverage says a clause was engaged, not that it was tested correctly.** A
+  probe that makes a rule applicable is not necessarily one that would expose a
+  misreading of it. Boundary coverage is the sharper number and is reported
+  beside it, but neither is a proof.
 - **Attribution is evidential, not causal.** It reports which clause the
   disagreements concentrate on. Ambiguity from an *interaction* between clauses
   is reported as "no single clause is clearly responsible".
@@ -456,17 +579,22 @@ under-specified itself.
 ## Repository
 
 ```
-src/shall/     the language, compiler, oracle, conformance, CLI
-src/ears/      EARS clause parser, shared with .kiro specs
+src/shall/lang/        parser, recursive-descent type grammar, EARS binding
+src/shall/compile/     the ensemble: N readers, identical prompt, recordings
+src/shall/oracle/      probes, differential execution, witness minimisation
+src/shall/coverage/    specification coverage and coverage-guided generation
+src/shall/conform/     per-clause expectations, checked against the build
+src/shall/execute/     node:vm sandbox, determinism check, numeric equivalence
+src/ears/              EARS clause parser, shared with .kiro specs
 src/{binding,verify,lock,report}/   the engine behind `shall verify`
-examples/      .shall programs, each with an ambiguous and a fixed version
-recordings/    committed ensemble outputs, so every example replays for free
-scripts/       findings.mjs — reproduces all three findings offline
-tests/         145 tests, TAP
-.kiro/         the specification this repository is verified against
+examples/              .shall programs, each with an ambiguous and a fixed version
+recordings/            committed ensemble outputs, so every example replays free
+scripts/               findings.mjs — reproduces all five findings offline
+tests/                 193 tests, TAP
+.kiro/                 the specification this repository is verified against
 ```
 
-145 tests · 50/50 criteria proven · 47 recorded readers · one runtime dependency.
+193 tests · 75/75 criteria proven · 48 recorded readers · one runtime dependency.
 
 [`PROVENANCE.md`](PROVENANCE.md) records honestly how this repository was built,
 including that the first commit contained the whole initial project.

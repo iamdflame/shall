@@ -89,7 +89,10 @@ function diagnostic(
     const minimal = witness.minimalInput;
     out.push(`   ${bold('WITNESS')}  ${cyan(formatInput(minimal ?? witness.probe.input))}`);
     if (minimal) {
-      out.push(`   ${dim('  also')}  ${dim(formatInput(witness.probe.input))}`);
+      // "also" invited exactly the misreading this tool exists to catch: the
+      // readings printed below are measured at the minimal witness, and the
+      // larger input can produce different ones. Name the relationship.
+      out.push(`   ${dim('shrunk from')}  ${dim(formatInput(witness.probe.input))}`);
     }
     // Structural probes describe themselves by their own input, which the line
     // above already shows; only a distinct rationale is worth a second line.

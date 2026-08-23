@@ -78,7 +78,17 @@ nav .wrap { display: flex; align-items: center; justify-content: space-between; 
 
 /* --- hero ---------------------------------------------------------------- */
 
-.hero { padding: 168px 0 96px; position: relative; }
+.hero {
+  padding: 168px 0 96px;
+  position: relative;
+  /* The glow below bleeds 20% past every edge. On the horizontal axis that
+     widened the document by ~240px and gave the whole page a sideways scroll.
+     `overflow-x: clip` removes the layout overflow without making this a
+     scroll container, so the vertical bleed that softens the gradient stays.
+     (clip-path was the first attempt and does not work here: it clips what is
+     painted and leaves the scrollable area exactly as wide.) */
+  overflow-x: clip;
+}
 .hero::before {
   content: ""; position: absolute; inset: -20% -20% 40% -20%; pointer-events: none;
   background: radial-gradient(ellipse 50% 40% at 50% 30%, rgba(255,107,74,.09), transparent 70%);
@@ -372,3 +382,110 @@ footer a:hover { color: var(--ink); }
 /* Nothing may make the document wider than the screen. */
 html, body { max-width: 100%; }
 img, svg, pre, table { max-width: 100%; }
+
+/* ── one step past the boundary ──────────────────────────────────────────
+   The two panels are deliberately identical in every way except their
+   readings, so the only thing the eye can catch is the split. */
+
+.bnd {
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--raise);
+  overflow: hidden;
+}
+
+.bnd-clause {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  padding: 20px clamp(16px, 3vw, 26px);
+  border-bottom: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.bnd-id {
+  font: 600 11px/1 var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--discord);
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 107, 74, 0.35);
+  border-radius: 5px;
+  flex: none;
+}
+
+.bnd-clause code {
+  font: 400 clamp(12.5px, 1.5vw, 14px)/1.6 var(--mono);
+  color: var(--ink);
+}
+
+.bnd-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* The divider carries the comparison, so it stays on every viewport - it just
+   moves from between the columns to between the stacked rows. */
+.bnd-side + .bnd-side { border-left: 1px solid var(--rule); }
+
+.bnd-side { padding: 20px clamp(16px, 3vw, 26px) 24px; }
+
+.bnd-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bnd-when {
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.bnd-input {
+  font: 400 clamp(13px, 1.7vw, 15px)/1.5 var(--mono);
+  color: var(--ink);
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--ground);
+  margin-bottom: 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.bnd-readings { display: grid; gap: 8px; }
+
+.bnd-foot {
+  padding: 13px clamp(16px, 3vw, 26px);
+  border-top: 1px solid var(--rule);
+  background: var(--panel);
+  font: 400 11.5px/1.5 var(--mono);
+  color: var(--faint);
+}
+
+@media (max-width: 720px) {
+  .bnd-pair { grid-template-columns: 1fr; }
+  .bnd-side + .bnd-side { border-left: 0; border-top: 1px solid var(--rule); }
+}
+
+/* The panels are half-width, so the reading blocks are scaled to match rather
+   than inheriting the explorer's full-width proportions. */
+.bnd-head .state {
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.bnd-head .state.ok  { color: var(--accord); }
+.bnd-head .state.bad { color: var(--discord); }
+
+.bnd-readings .group { grid-template-columns: 64px 1fr; gap: 14px; padding: 12px 14px; }
+.bnd-readings .group .val { font-size: 1.55rem; }
+
+.bnd-note {
+  margin-top: 14px;
+  font: 400 11.5px/1.5 var(--mono);
+  color: var(--faint);
+}

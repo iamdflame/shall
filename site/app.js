@@ -119,6 +119,65 @@ function renderGroups(divergence) {
   }
 }
 
+/**
+ * Finding 5, rendered from the same measurement the CLI makes.
+ *
+ * The two sides are the point: on the boundary the readers are unanimous, one
+ * step past it they are not. Nothing on this page is typed in - if the
+ * recordings change and the split goes away, the section empties itself rather
+ * than keep claiming it.
+ */
+function buildBoundary(data) {
+  const b = data?.boundary;
+  const section = document.getElementById('boundary');
+  if (!section) return;
+  if (!b) { section.remove(); return; }
+
+  const set = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+
+  set('b-id', b.criterion);
+  set('b-clause', b.clause);
+  set('b-why', b.rationale);
+
+  for (const [key, side] of [['on', b.onBoundary], ['past', b.pastBoundary]]) {
+    set(`b-${key}-input`, formatInput(side.input));
+    const state = document.getElementById(`b-${key}-state`);
+    if (state) {
+      const n = side.readings.length;
+      state.textContent = n === 1 ? 'unanimous' : `${n} readings`;
+      state.className = `state ${n === 1 ? 'ok' : 'bad'}`;
+    }
+
+    // Both sides state their own count. It fills the space the unanimous side
+    // would otherwise leave empty, and it says the comparison out loud rather
+    // than asking the reader to count chips.
+    const readers = side.readings.reduce((n, r) => n + r.readers.length, 0);
+    const values = side.readings.length;
+    set(
+      `b-${key}-note`,
+      values === 1
+        ? `all ${readers} readers returned the same value`
+        : `${readers} readers, ${values} different values`,
+    );
+
+    const box = document.getElementById(`b-${key}-readings`);
+    if (!box) continue;
+    box.innerHTML = '';
+    side.readings.forEach((r, i) => {
+      const row = document.createElement('div');
+      row.className = `group ${side.readings.length === 1 ? 'one' : i === 0 ? 'one' : 'two'}`;
+      row.style.animationDelay = REDUCED ? '0ms' : `${i * 70}ms`;
+      row.innerHTML =
+        `<div class="val">${escapeHtml(r.value)}</div>` +
+        `<div class="chips">${r.readers.map((n) => `<span class="chip">${escapeHtml(n)}</span>`).join('')}</div>`;
+      box.appendChild(row);
+    });
+  }
+}
+
 function buildExplorer(data) {
   const list = document.getElementById('inputs');
   if (!list || !data?.wordCount) return;
@@ -224,6 +283,7 @@ fetch('/data.json')
   .then((data) => {
     if (!data) return;
     buildExplorer(data);
+    buildBoundary(data);
     fillStats(data);
   })
   .catch(() => {

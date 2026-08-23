@@ -211,55 +211,117 @@
    "gpt-5.6-luna",
    "gpt-5.6-terra"
   ],
-  "probes": 12,
-  "groups": 2,
+  "probes": 13,
+  "groups": 3,
   "unanimous": false,
   "divergences": [
    {
     "input": {
      "dice": [
-      0,
-      0,
-      0,
-      0,
-      0
+      1,
+      1,
+      1
      ]
     },
     "original": {
      "dice": [
-      0,
-      0,
-      0,
-      0,
-      0
+      1,
+      1,
+      1
      ]
     },
     "minimised": false,
     "label": "edge case",
     "readings": [
      {
-      "value": "2000",
+      "value": "100",
       "readers": [
        "gpt-4o",
+       "gpt-4.1",
        "o4-mini",
        "gpt-5.2",
-       "gpt-5.6-luna",
        "gpt-5.6-terra"
       ]
      },
      {
-      "value": "0",
+      "value": "250",
       "readers": [
-       "gpt-4.1"
+       "gpt-5.6-luna"
       ]
      }
     ]
    }
   ]
  },
+ "boundary": {
+  "criterion": "1.2",
+  "clause": "IF five dice show the same face THEN the system SHALL score two thousand instead",
+  "field": "dice",
+  "at": 5,
+  "rationale": "criterion 1.2 turns at 5 on dice; this sits at 6",
+  "onBoundary": {
+   "input": {
+    "dice": [
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   },
+   "readings": [
+    {
+     "value": "2000",
+     "readers": [
+      "gpt-4o",
+      "gpt-4.1",
+      "o4-mini",
+      "gpt-5.2",
+      "gpt-5.6-luna",
+      "gpt-5.6-terra"
+     ]
+    }
+   ]
+  },
+  "pastBoundary": {
+   "input": {
+    "dice": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   },
+   "readings": [
+    {
+     "value": "100",
+     "readers": [
+      "gpt-4o",
+      "o4-mini",
+      "gpt-5.2",
+      "gpt-5.6-terra"
+     ]
+    },
+    {
+     "value": "250",
+     "readers": [
+      "gpt-4.1"
+     ]
+    },
+    {
+     "value": "400",
+     "readers": [
+      "gpt-5.6-luna"
+     ]
+    }
+   ]
+  }
+ },
  "stats": {
-  "tests": 148,
-  "criteria": 50,
+  "tests": 193,
+  "criteria": 75,
   "recordings": 47
  }
 }

@@ -107,6 +107,46 @@
   </div>
 </section>
 
+<!-- ─── the boundary ──────────────────────────────────────────────────── -->
+<section id="boundary">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>One step past</h2>
+      <p class="sec-title">The clause says where it turns. Nothing had asked what happens on the other side.</p>
+      <p class="sec-note">
+        Probes derived from the interface know the shape of your inputs and nothing
+        about what your clauses say. So SHALL reads the boundary out of the
+        requirement, checks whether anything ever sat above it, and writes the probe
+        that did not exist.
+      </p>
+    </div>
+
+    <div class="bnd reveal">
+      <div class="bnd-clause">
+        <span class="bnd-id" id="b-id">1.2</span>
+        <code id="b-clause">IF five dice show the same face THEN the system SHALL score two thousand instead</code>
+      </div>
+
+      <div class="bnd-pair">
+        <div class="bnd-side" id="b-on">
+          <div class="bnd-head"><span class="bnd-when">on the boundary</span><span class="state ok" id="b-on-state">unanimous</span></div>
+          <div class="bnd-input" id="b-on-input"></div>
+          <div class="bnd-readings" id="b-on-readings"></div>
+          <p class="bnd-note" id="b-on-note"></p>
+        </div>
+        <div class="bnd-side" id="b-past">
+          <div class="bnd-head"><span class="bnd-when">one step past</span><span class="state bad" id="b-past-state">3 readings</span></div>
+          <div class="bnd-input" id="b-past-input"></div>
+          <div class="bnd-readings" id="b-past-readings"></div>
+          <p class="bnd-note" id="b-past-note"></p>
+        </div>
+      </div>
+
+      <div class="bnd-foot"><span id="b-why">criterion 1.2 turns at 5 on dice; this sits at 6</span></div>
+    </div>
+  </div>
+</section>
+
 <!-- ─── the fix ───────────────────────────────────────────────────────── -->
 <section id="fix">
   <div class="wrap">
@@ -212,10 +252,10 @@ specification states how text is split</span></pre>
   <div class="wrap">
     <div class="sec-head reveal">
       <h2>Findings</h2>
-      <p class="sec-title">Four results, each one re-runnable in ten seconds.</p>
+      <p class="sec-title">Five results, each one re-runnable in thirteen seconds.</p>
       <p class="sec-note">
         A finding stated in a README is an anecdote. <code>npm run findings</code>
-        reproduces all four from the committed recordings, with no API key and no
+        reproduces all five from the committed recordings, with no API key and no
         spending — and fails if any of them stops being true.
       </p>
     </div>
@@ -246,6 +286,15 @@ specification states how text is split</span></pre>
         <h3>Ambiguity hides between precise sentences</h3>
         <p>A dice-scoring specification the static lint finds nothing wrong with still
         splits the readers, because two clauses never say which one applies first.</p>
+      </article>
+      <article class="find">
+        <div class="no">Finding 05</div>
+        <h3>The probes that find ambiguity are the ones the requirements ask for</h3>
+        <p>“IF five dice show the same face” says where the rule turns. No
+        interface-derived probe ever went above five, so nothing asked what happens at
+        six — where the readers split <em>three</em> ways. Reading the boundary out of
+        the clause and probing one step past it found what shape-derived probes could
+        not.</p>
       </article>
     </div>
   </div>
@@ -292,8 +341,8 @@ specification states how text is split</span></pre>
 <span class="c">$</span> npm install &amp;&amp; npm run build &amp;&amp; npm run install-cli
 
 <span class="c">$</span> shall check examples/word-count.shall   <span class="c"># the disagreement</span>
-<span class="c">$</span> npm run findings                        <span class="c"># all four findings, 15s</span>
-<span class="c">$</span> npm run verify                          <span class="c"># 50/50 criteria</span></pre>
+<span class="c">$</span> npm run findings                        <span class="c"># all five findings, 13s</span>
+<span class="c">$</span> npm run verify                          <span class="c"># 75/75 criteria</span></pre>
     </div>
 
     <div class="cta reveal" style="margin-top:26px">

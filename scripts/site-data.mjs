@@ -15,7 +15,10 @@ import { readRecording, readManifest } from '../dist/shall/compile/recordings.js
 import { structuralProbes } from '../dist/shall/oracle/probes.js';
 import { runDifferential } from '../dist/shall/oracle/differential.js';
 import { minimiseWitness } from '../dist/shall/oracle/minimise.js';
-import { canonical, display } from '../dist/shall/execute/sandbox.js';
+import { canonical, display, loadCandidate } from '../dist/shall/execute/sandbox.js';
+import { targetedProbes, boundaries, isStraddled } from '../dist/shall/coverage/targeted.js';
+import { readdirSync } from 'node:fs';
+import { loadSpecs } from '../dist/ears/spec-reader.js';
 
 const ROOT = process.cwd();
 const ENSEMBLE = [
@@ -107,13 +110,77 @@ function analyse(path, probeCount = 96, limit = 6) {
   };
 }
 
+/** Every `test(` in the suite, counted from source rather than remembered. */
+function countTests() {
+  return readdirSync('tests')
+    .filter((f) => f.endsWith('.test.ts'))
+    .reduce((n, f) => n + (readFileSync(`tests/${f}`, 'utf8').match(/^test\(/gm) ?? []).length, 0);
+}
+
+/** Every well-formed acceptance criterion across the .kiro specs. */
+function countCriteria() {
+  return loadSpecs(`${ROOT}/.kiro`)
+    .flatMap((spec) => spec.requirements)
+    .flatMap((requirement) => requirement.criteria)
+    .filter((c) => c.pattern !== 'malformed').length;
+}
+
+/**
+ * Finding 5, measured rather than described.
+ *
+ * The specification states a boundary at five dice. No interface-derived probe
+ * goes above it, so the tool writes one - and the readers split three ways on
+ * an input nothing else would have produced.
+ */
+function boundaryFinding(path) {
+  const program = parseShall(readFileSync(path, 'utf8'), path).program;
+  const base = structuralProbes(program, 96);
+  const gap = boundaries(program, base).find((b) => !isStraddled(b));
+  const made = targetedProbes(program, base, 16);
+  if (!gap || made.length === 0) return null;
+
+  const input = buildCompilerInput(program);
+  const sources = ENSEMBLE.map((id) => ({
+    label: id.replace('openai:', ''),
+    source: readRecording(ROOT, key(input, id)),
+  })).filter((s) => s.source);
+  const readAt = (input) => {
+    const grouped = new Map();
+    for (const s of sources) {
+      let out;
+      try { out = display(loadCandidate(s.source).run(input, 1000)); } catch { continue; }
+      grouped.set(out, [...(grouped.get(out) ?? []), s.label]);
+    }
+    return [...grouped.entries()]
+      .map(([value, readers]) => ({ value, readers }))
+      .sort((a, b) => b.readers.length - a.readers.length);
+  };
+
+  const onIt = { dice: Array.from({ length: gap.at }, () => 1) };
+  const past = made[0].input;
+
+  return {
+    criterion: gap.criterion.id,
+    clause: gap.criterion.raw,
+    field: gap.field,
+    at: gap.at,
+    rationale: made[0].rationale,
+    onBoundary: { input: onIt, readings: readAt(onIt) },
+    pastBoundary: { input: past, readings: readAt(past) },
+  };
+}
+
 const data = {
   wordCount: analyse('examples/word-count.shall'),
   wordCountFixed: analyse('examples/word-count.fixed.shall'),
   dice: analyse('examples/dice-score.shall'),
+  boundary: boundaryFinding('examples/dice-score.shall'),
+  // Counted rather than typed in. The hardcoded pair went stale within a day of
+  // being written, and a number on a project page that nobody re-derives is a
+  // number that will be wrong.
   stats: {
-    tests: 148,
-    criteria: 50,
+    tests: countTests(),
+    criteria: countCriteria(),
     recordings: Object.keys(readManifest(ROOT).readers).length,
   },
 };

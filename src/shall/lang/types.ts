@@ -20,7 +20,23 @@ import type { Criterion } from '../../ears/types.js';
  */
 
 export type ScalarType = 'integer' | 'number' | 'string' | 'boolean';
-export type ShallType = ScalarType | { list: ScalarType };
+
+/** One field of a record. Optional fields may be absent from a value. */
+export interface RecordField {
+  name: string;
+  type: ShallType;
+  optional: boolean;
+}
+
+/**
+ * Types nest. A specification about an order cannot be written with scalars
+ * alone, and a language that can only describe flat inputs is not describing
+ * the specifications people actually write.
+ */
+export type ShallType =
+  | ScalarType
+  | { list: ShallType }
+  | { record: RecordField[] };
 
 export interface Field {
   name: string;
@@ -63,12 +79,32 @@ export interface ParsedProgram {
   diagnostics: ParseDiagnostic[];
 }
 
-export function isListType(t: ShallType): t is { list: ScalarType } {
+export function isListType(t: ShallType): t is { list: ShallType } {
   return typeof t === 'object' && 'list' in t;
 }
 
+export function isRecordType(t: ShallType): t is { record: RecordField[] } {
+  return typeof t === 'object' && 'record' in t;
+}
+
+export function isScalarType(t: ShallType): t is ScalarType {
+  return typeof t === 'string';
+}
+
+/** Render a type the way it is written in source, so errors quote it back. */
 export function typeName(t: ShallType): string {
-  return isListType(t) ? `list<${t.list}>` : t;
+  if (isListType(t)) return `list<${typeName(t.list)}>`;
+  if (isRecordType(t)) {
+    return `{ ${t.record.map((f) => `${f.name}${f.optional ? '?' : ''}: ${typeName(f.type)}`).join(', ')} }`;
+  }
+  return t;
+}
+
+/** Every scalar type reachable inside a type, for probe-pool selection. */
+export function scalarsWithin(t: ShallType): ScalarType[] {
+  if (isScalarType(t)) return [t];
+  if (isListType(t)) return scalarsWithin(t.list);
+  return t.record.flatMap((f) => scalarsWithin(f.type));
 }
 
 /** Every criterion across every requirement, in declaration order. */

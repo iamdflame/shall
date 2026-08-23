@@ -1,5 +1,5 @@
-import type { Field, Program, ScalarType, ShallType } from '../lang/types.js';
-import { isListType } from '../lang/types.js';
+import type { Field, Program, RecordField, ScalarType, ShallType } from '../lang/types.js';
+import { isListType, isRecordType, scalarsWithin } from '../lang/types.js';
 
 /**
  * Probe generation.
@@ -45,15 +45,25 @@ const INTERESTING: Record<ScalarType, unknown[]> = {
   boolean: [true, false],
 };
 
-function valuesFor(type: ShallType, extraNumbers: number[] = [], sweep: { real: number[]; int: number[] } = { real: [], int: [] }): unknown[] {
-  if (isListType(type)) {
-    const inner = valuesFor(type.list, extraNumbers, sweep) as unknown[];
-    return listValues(inner, extraNumbers);
-  }
+/**
+ * Interesting values for a type.
+ *
+ * Recursive, because types are. A record contributes a baseline value plus one
+ * variant per field, and an optional field additionally contributes a value
+ * with that field absent — a specification that never says what happens when a
+ * field is missing is exactly the kind that readers resolve differently.
+ */
+function valuesFor(
+  type: ShallType,
+  extraNumbers: number[] = [],
+  sweep: { real: number[]; int: number[] } = { real: [], int: [] },
+): unknown[] {
+  if (isRecordType(type)) return recordValues(type.record, extraNumbers, sweep);
+  if (isListType(type)) return listValues(valuesFor(type.list, extraNumbers, sweep), extraNumbers);
+
   const base = INTERESTING[type];
   if (type === 'integer') {
-    const ints = extraNumbers.filter(Number.isInteger);
-    return dedupe([...base, ...ints, ...sweep.int]);
+    return dedupe([...base, ...extraNumbers.filter(Number.isInteger), ...sweep.int]);
   }
   if (type === 'number') {
     return dedupe([...base, ...extraNumbers, ...sweep.real]);
@@ -62,25 +72,69 @@ function valuesFor(type: ShallType, extraNumbers: number[] = [], sweep: { real: 
 }
 
 /**
+ * Record values: a baseline, then one variant per field, then each optional
+ * field dropped. Not the cartesian product — that explodes with field count,
+ * and the interaction walk over the whole input already covers combinations.
+ */
+function recordValues(
+  fields: RecordField[],
+  extraNumbers: number[],
+  sweep: { real: number[]; int: number[] },
+): unknown[] {
+  const pools = fields.map((f) => valuesFor(f.type, extraNumbers, sweep));
+
+  const baseline: Record<string, unknown> = {};
+  fields.forEach((f, i) => { baseline[f.name] = pools[i]![0]; });
+
+  const out: unknown[] = [baseline];
+
+  fields.forEach((f, i) => {
+    for (const value of pools[i]!.slice(1, 6)) {
+      out.push({ ...baseline, [f.name]: value });
+    }
+    if (f.optional) {
+      const without = { ...baseline };
+      delete without[f.name];
+      out.push(without);
+    }
+  });
+
+  return dedupe(out.map((v) => JSON.stringify(v))).map((v) => JSON.parse(v as string));
+}
+
+/**
  * Interesting lists.
  *
- * A handful of prefixes of the element pool is nowhere near enough. Rules about
- * collections almost always turn on *repetition* and *length* - "three or more
- * dice show the same face", "if several players share a score" - and a list of
- * distinct ascending values exercises none of that. A spec about five dice was
- * getting four probes, none of which contained a repeated element, so the
- * clause that actually mattered was never engaged.
- *
- * Lengths come from the specification's own literals where possible, since a
- * rule saying "three or more" is only interesting at two, three and four.
+ * Rules about collections almost always turn on repetition and length — "three
+ * or more dice show the same face", "if several players share a score" — and a
+ * list of distinct ascending values exercises neither. Lengths come from the
+ * specification's own literals where possible, since a rule saying "three or
+ * more" is only interesting at two, three and four.
  */
-function listValues(inner: unknown[], literals: number[]): unknown[] {
-  const out: unknown[] = [[], [inner[0]]];
-  const first = inner[0];
-  const second = inner[1] ?? inner[0];
-  const third = inner[2] ?? inner[0];
+/** Sort key for list elements: small positives first, zero and negatives last. */
+function rank(v: unknown): number {
+  if (typeof v === 'number') {
+    if (v > 0 && Number.isInteger(v) && v <= 12) return v;      // 1..12 first
+    if (v > 0) return 100 + v;
+    if (v === 0) return 900;
+    return 1000 - v;
+  }
+  if (typeof v === 'string') return v.length === 0 ? 900 : 50;
+  return 500;
+}
 
-  // Lengths worth trying: small by default, plus any length the spec names.
+function listValues(inner: unknown[], literals: number[]): unknown[] {
+  // Lead with a small positive element rather than the scalar pool's default.
+  // Collections are usually counts, faces or scores, and a list of zeros is
+  // degenerate for almost every rule about them — "three dice show the same
+  // face" is barely exercised by [0,0,0], and the witness that results reads
+  // as a curiosity rather than as the rule being tested.
+  const ordered = [...inner].sort((a, b) => rank(a) - rank(b));
+  const out: unknown[] = [[], [ordered[0]]];
+  const first = ordered[0];
+  const second = ordered[1] ?? ordered[0];
+  const third = ordered[2] ?? ordered[0];
+
   const lengths = new Set<number>([2, 3, 5]);
   for (const n of literals) {
     if (Number.isInteger(n) && n >= 1 && n <= 12) {
@@ -91,22 +145,15 @@ function listValues(inner: unknown[], literals: number[]): unknown[] {
   }
 
   for (const len of [...lengths].sort((a, b) => a - b).slice(0, 8)) {
-    // All the same - the strongest form of repetition.
     out.push(Array.from({ length: len }, () => first));
-    // A majority the same, with the remainder different.
     if (len >= 3) {
-      out.push([
-        ...Array.from({ length: len - 1 }, () => first),
-        second,
-      ]);
+      out.push([...Array.from({ length: len - 1 }, () => first), second]);
       out.push([
         ...Array.from({ length: Math.ceil(len / 2) }, () => first),
         ...Array.from({ length: Math.floor(len / 2) }, () => second),
       ]);
     }
-    // All distinct, for the no-repetition branch.
     out.push(Array.from({ length: len }, (_, i) => inner[i % inner.length]));
-    // Two pairs, which distinguishes "a set" from "the largest set".
     if (len >= 4) {
       out.push([first, first, second, second, ...Array.from({ length: len - 4 }, () => third)]);
     }
@@ -219,8 +266,8 @@ export function structuralProbes(program: Program, limit: number): Probe[] {
 
   // Scale the value pool with the budget, so a large --probes actually explores
   // a larger space instead of exhausting a fixed cartesian product.
-  const numericFields = fields.filter(
-    (f) => f.type === 'number' || f.type === 'integer' || (isListType(f.type) && f.type.list !== 'string'),
+  const numericFields = fields.filter((f) =>
+    scalarsWithin(f.type).some((t) => t === 'number' || t === 'integer'),
   ).length;
   const sweepSize =
     numericFields > 0 && limit > 200
@@ -323,9 +370,21 @@ export function parseGeneratedProbes(raw: string, program: Program, offset: numb
   return probes;
 }
 
+/** Does a JSON value conform to a declared type? Recursive, like the types. */
 function matchesType(value: unknown, type: ShallType): boolean {
+  if (isRecordType(type)) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    const record = value as Record<string, unknown>;
+    const known = new Set(type.record.map((f) => f.name));
+    // An invented field means the probe is testing something the interface
+    // never promised, so it is not a probe of this program.
+    if (Object.keys(record).some((k) => !known.has(k))) return false;
+    return type.record.every((f) =>
+      f.name in record ? matchesType(record[f.name], f.type) : f.optional,
+    );
+  }
   if (isListType(type)) {
-    return Array.isArray(value) && value.every((v) => matchesScalar(v, type.list));
+    return Array.isArray(value) && value.every((v) => matchesType(v, type.list));
   }
   return matchesScalar(value, type);
 }

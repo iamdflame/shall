@@ -9,6 +9,7 @@ import { ProviderRegistry, resolveRoster } from './provider/registry.js';
 import { compileEnsemble } from './compile/compiler.js';
 import { structuralProbes, parseGeneratedProbes, PROBE_INSTRUCTIONS } from './oracle/probes.js';
 import { runDifferential, buildVerdict } from './oracle/differential.js';
+import { measureCoverage } from './coverage/coverage.js';
 import { minimiseWitness } from './oracle/minimise.js';
 import { canonical as canonicalOutcome, display as displayOutcome } from './execute/sandbox.js';
 import { suggestRewrites, applyRewrite } from './suggest/suggest.js';
@@ -290,6 +291,10 @@ async function analyse(file: string, flags: Flags) {
   }
 
   const verdict = buildVerdict(oracle, config.quorum);
+  // Which clauses did the probes actually reach? Unanimity over a probe set
+  // that never engaged a clause says nothing about that clause, and the report
+  // should not let a green result imply otherwise.
+  const coverage = measureCoverage(program, probes);
   const vagueness = lintVagueness(program);
   // Arithmetic artefacts must never implicate a clause.
   const attributions = attribute(program, oracle.behaviourDivergences, probes);
@@ -305,7 +310,7 @@ async function analyse(file: string, flags: Flags) {
       ? attributePairs(program, oracle.behaviourDivergences, probes)
       : [];
 
-  return { program, config, oracle, verdict, vagueness, attributions, pairs, compiled, root };
+  return { program, config, oracle, verdict, coverage, vagueness, attributions, pairs, compiled, root };
 }
 
 /**
@@ -367,7 +372,7 @@ async function runConformance(
 }
 
 async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<number> {
-  const { program, config, oracle, verdict, vagueness, attributions, pairs, compiled, root } =
+  const { program, config, oracle, verdict, coverage, vagueness, attributions, pairs, compiled, root } =
     await analyse(file, flags);
 
   if (flags.json) {
@@ -393,6 +398,22 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
             lift: Number(a.lift.toFixed(3)),
           })),
           warnings: vagueness.map((w) => ({ line: w.criterion.line, term: w.term, why: w.why })),
+          coverage: {
+            score: Number(coverage.score.toFixed(3)),
+            covered: coverage.covered,
+            total: coverage.criteria.length,
+            unexercised: coverage.unexercised.map((r) => ({
+              criterion: r.criterion.id,
+              line: r.criterion.line,
+              text: r.criterion.raw,
+            })),
+            criteria: coverage.criteria.map((r) => ({
+              criterion: r.criterion.id,
+              engaged: r.engaged,
+              rate: Number(r.rate.toFixed(3)),
+              references: r.references,
+            })),
+          },
         },
         null,
         2,
@@ -404,7 +425,7 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
   if (!verdict.ok) {
     process.stdout.write(
       renderAmbiguity({
-        program, oracle, attributions, pairs, vagueness,
+        program, oracle, coverage, attributions, pairs, vagueness,
         failures: compiled.failures,
         reason: verdict.reason,
       }),
@@ -433,7 +454,7 @@ async function cmdBuild(file: string, flags: Flags, emit: boolean): Promise<numb
 
   process.stdout.write(
     renderSuccess({
-      program, oracle, vagueness,
+      program, oracle, coverage, vagueness,
       failures: compiled.failures,
       outputPath: blocked
         ? '(blocked: the program contradicts the specification)'

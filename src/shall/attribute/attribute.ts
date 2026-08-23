@@ -3,6 +3,7 @@ import type { Program } from '../lang/types.js';
 import { programCriteria } from '../lang/types.js';
 import type { Divergence } from '../oracle/differential.js';
 import type { Probe } from '../oracle/probes.js';
+import { engagementMatrix } from '../coverage/coverage.js';
 
 /**
  * Attribution: which English sentence failed to determine the behaviour?
@@ -44,60 +45,15 @@ export interface Attribution {
   vagueWhy?: string;
 }
 
-const STOPWORDS = new Set([
-  'the', 'a', 'an', 'system', 'shall', 'when', 'if', 'then', 'while', 'where',
-  'is', 'are', 'be', 'to', 'of', 'and', 'or', 'not', 'it', 'that', 'by', 'as',
-  'with', 'for', 'in', 'on', 'at', 'this', 'its', 'was', 'has', 'have',
-]);
-
-function numbersIn(text: string): number[] {
-  return [...text.matchAll(/-?\d+(?:\.\d+)?/g)]
-    .map((m) => Number(m[0]))
-    .filter((n) => Number.isFinite(n));
-}
-
-function wordsIn(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((w) => w.length > 2 && !STOPWORDS.has(w));
-}
-
 /**
- * Does this probe plausibly engage this criterion?
+ * Engagement is shared with the coverage module rather than duplicated here.
  *
- * Two signals, both conservative:
- *  - the probe sets an input the criterion names to a non-default value, so the
- *    clause has something to act on;
- *  - the probe carries a value at or across a threshold the criterion states,
- *    which is where a condition changes truth value.
+ * Two copies of "does this probe engage this clause" would drift, and then
+ * coverage and attribution would quietly disagree about which clauses a run
+ * actually exercised. One implementation, stem-aware and record-aware, is used
+ * by both.
  */
-function engages(criterion: Criterion, probe: Probe, program: Program): boolean {
-  const text = criterion.raw.toLowerCase();
-  const criterionWords = new Set(wordsIn(criterion.raw));
-  const thresholds = numbersIn(criterion.raw);
 
-  for (const field of program.interface.inputs) {
-    const value = probe.input[field.name];
-    const named =
-      text.includes(field.name.toLowerCase()) ||
-      wordsIn(field.name).some((w) => criterionWords.has(w));
-
-    if (named && value !== 0 && value !== '' && value !== false) return true;
-
-    if (typeof value === 'number') {
-      for (const t of thresholds) {
-        // Only genuine proximity to a stated threshold counts. An earlier
-        // version also counted any value on the far side of the threshold,
-        // which matched nearly every probe and made every clause look guilty.
-        if (Math.abs(value - t) <= 1) return true;
-      }
-    }
-  }
-  return false;
-}
-
-// @shall shall-language/4.4
 export function attribute(
   program: Program,
   divergences: Divergence[],
@@ -115,10 +71,20 @@ export function attribute(
   const agreeingProbes = allProbes.filter((p) => !divergentIds.has(p.id));
 
   const results: Attribution[] = [];
+  // One matrix over all probes, so a clause is judged the same way here as it is
+  // in the coverage report, including fallbacks whose engagement is defined by
+  // the complement of every other clause.
+  const matrix = engagementMatrix(program, allProbes);
+  const engagedIds = new Map<string, Set<string>>();
+  for (const [id, row] of matrix) {
+    engagedIds.set(id, new Set(allProbes.filter((_, i) => row.engaged[i]).map((p) => p.id)));
+  }
+  const hit = (criterionId: string, probe: Probe): boolean =>
+    engagedIds.get(criterionId)?.has(probe.id) ?? false;
 
   for (const criterion of programCriteria(program)) {
-    const divergentHits = divergentProbes.filter((p) => engages(criterion, p, program)).length;
-    const agreeingHits = agreeingProbes.filter((p) => engages(criterion, p, program)).length;
+    const divergentHits = divergentProbes.filter((p) => hit(criterion.id, p)).length;
+    const agreeingHits = agreeingProbes.filter((p) => hit(criterion.id, p)).length;
 
     const divergentRate = divergentProbes.length ? divergentHits / divergentProbes.length : 0;
     const agreeingRate = agreeingProbes.length ? agreeingHits / agreeingProbes.length : 0;
@@ -242,11 +208,14 @@ export function attributePairs(
   if (divergentProbes.length === 0) return [];
 
   // Engagement is computed once per clause rather than once per pair.
+  const matrix = engagementMatrix(program, allProbes);
   const engagement = new Map<string, { divergent: Set<string>; agreeing: Set<string> }>();
   for (const criterion of criteria) {
+    const row = matrix.get(criterion.id);
+    const engaged = new Set(allProbes.filter((_, i) => row?.engaged[i]).map((p) => p.id));
     engagement.set(criterion.id, {
-      divergent: new Set(divergentProbes.filter((p) => engages(criterion, p, program)).map((p) => p.id)),
-      agreeing: new Set(agreeingProbes.filter((p) => engages(criterion, p, program)).map((p) => p.id)),
+      divergent: new Set(divergentProbes.filter((p) => engaged.has(p.id)).map((p) => p.id)),
+      agreeing: new Set(agreeingProbes.filter((p) => engaged.has(p.id)).map((p) => p.id)),
     });
   }
 

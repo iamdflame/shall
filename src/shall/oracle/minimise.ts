@@ -1,5 +1,5 @@
 import type { Program, ShallType } from '../lang/types.js';
-import { isListType } from '../lang/types.js';
+import { isListType, isRecordType } from '../lang/types.js';
 import type { Probe } from './probes.js';
 import { loadCandidate, canonical, type Outcome } from '../execute/sandbox.js';
 
@@ -43,6 +43,32 @@ function stillSplits(outcomes: Outcome[]): boolean {
 
 /** Shrink candidates for one value, ordered simplest-first. */
 function shrinkValue(value: unknown, type: ShallType): unknown[] {
+  if (isRecordType(type)) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+    const record = value as Record<string, unknown>;
+    const out: unknown[] = [];
+
+    // Dropping an optional field is the strongest simplification available: if
+    // the readers still disagree without it, the field was never the cause.
+    for (const f of type.record) {
+      if (f.optional && f.name in record) {
+        const without = { ...record };
+        delete without[f.name];
+        out.push(without);
+      }
+    }
+
+    // Then shrink each field in place, so a witness can reduce to the one field
+    // that actually matters with everything else at its simplest value.
+    for (const f of type.record) {
+      if (!(f.name in record)) continue;
+      for (const shrunk of shrinkValue(record[f.name], f.type)) {
+        out.push({ ...record, [f.name]: shrunk });
+      }
+    }
+    return out;
+  }
+
   if (isListType(type)) {
     if (!Array.isArray(value) || value.length === 0) return [];
     const out: unknown[] = [[]];
@@ -51,6 +77,12 @@ function shrinkValue(value: unknown, type: ShallType): unknown[] {
       out.push(value.slice(Math.floor(value.length / 2)));
       for (let i = 0; i < value.length; i++) {
         out.push([...value.slice(0, i), ...value.slice(i + 1)]);
+      }
+    }
+    // Shrink elements in place once the list itself cannot get shorter.
+    for (let i = 0; i < value.length; i++) {
+      for (const shrunk of shrinkValue(value[i], type.list)) {
+        out.push([...value.slice(0, i), shrunk, ...value.slice(i + 1)]);
       }
     }
     return out;

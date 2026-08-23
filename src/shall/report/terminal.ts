@@ -1,4 +1,5 @@
 import type { Program } from '../lang/types.js';
+import type { CoverageReport } from '../coverage/coverage.js';
 import type { OracleResult, Divergence } from '../oracle/differential.js';
 import type { Attribution, VaguenessWarning, PairAttribution } from '../attribute/attribute.js';
 import type { CompileFailure } from '../compile/compiler.js';
@@ -107,6 +108,7 @@ function diagnostic(
 
 export interface AmbiguityReportInput {
   program: Program;
+  coverage: CoverageReport;
   oracle: OracleResult;
   attributions: Attribution[];
   pairs?: PairAttribution[];
@@ -116,7 +118,7 @@ export interface AmbiguityReportInput {
 }
 
 export function renderAmbiguity(input: AmbiguityReportInput): string {
-  const { program, oracle, attributions, pairs = [], vagueness, failures, reason } = input;
+  const { program, oracle, coverage, attributions, pairs = [], vagueness, failures, reason } = input;
   const out: string[] = [];
 
   out.push('');
@@ -178,6 +180,10 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
     out.push('');
   }
 
+  // Worth saying even here. An author about to edit one clause should know if
+  // half the others were never tested either, so the next run is not a surprise.
+  if (coverage.unexercised.length > 0) out.push(...renderCoverage(program, coverage));
+
   if (failures.length > 0) {
     out.push(dim(RULE));
     out.push('');
@@ -196,8 +202,57 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
   return out.join('\n');
 }
 
+/**
+ * Specification coverage.
+ *
+ * A green build says the readers agreed on every probe. It does not say every
+ * clause was tested — and those are different claims. If clause 3.2 was never
+ * engaged by any probe, unanimity across the ensemble tells you nothing
+ * whatsoever about clause 3.2, and a report that stays silent about that is
+ * letting the reader draw a stronger conclusion than the evidence supports.
+ *
+ * So the number is always printed, not only when it is bad.
+ */
+export function renderCoverage(program: Program, coverage: CoverageReport): string[] {
+  const out: string[] = [];
+  const pct = Math.round(coverage.score * 100);
+  const complete = coverage.unexercised.length === 0;
+  const tint = complete ? green : amber;
+
+  out.push(dim(RULE));
+  out.push('');
+  out.push(
+    `  ${bold('SPECIFICATION COVERAGE')}  ${tint(`${pct}%`)} ${dim(
+      `- ${coverage.covered}/${coverage.criteria.length} criteria engaged by at least one of ${coverage.probes} probes`,
+    )}`,
+  );
+  out.push('');
+
+  if (complete) {
+    out.push(`    ${green('=')} ${dim('every criterion was exercised')}`);
+    out.push('');
+    return out;
+  }
+
+  out.push(`  ${dim('These clauses were never engaged, so nothing here verified them:')}`);
+  out.push('');
+  for (const row of coverage.unexercised.slice(0, 6)) {
+    out.push(`    ${amber('!')} ${grey(`${program.path}:${row.criterion.line}`)}`);
+    out.push(`      ${dim(truncate(row.criterion.raw, 72))}`);
+  }
+  if (coverage.unexercised.length > 6) {
+    out.push(`      ${dim(`... and ${coverage.unexercised.length - 6} more`)}`);
+  }
+  out.push('');
+  out.push(`  ${dim('Add an input value that makes each one applicable, or delete the clause.')}`);
+  out.push('');
+  return out;
+}
+
+
 export interface SuccessReportInput {
   program: Program;
+  coverage: CoverageReport;
   oracle: OracleResult;
   vagueness: VaguenessWarning[];
   failures: CompileFailure[];
@@ -207,7 +262,7 @@ export interface SuccessReportInput {
 }
 
 export function renderSuccess(input: SuccessReportInput): string {
-  const { program, oracle, vagueness, failures, outputPath, cachedCount, usage } = input;
+  const { program, oracle, coverage, vagueness, failures, outputPath, cachedCount, usage } = input;
   const out: string[] = [];
 
   out.push('');
@@ -223,6 +278,8 @@ export function renderSuccess(input: SuccessReportInput): string {
     out.push(`    ${green('=')} ${candidate.label}`);
   }
   out.push('');
+
+  out.push(...renderCoverage(program, coverage));
 
   if (vagueness.length > 0) {
     out.push(dim(RULE));

@@ -29,6 +29,8 @@ Output requirements:
 - The module must be self-contained: no imports, no require, no I/O, no network, no randomness, no reliance on the current date or time.
 - The function must be deterministic: the same input always produces the same output.
 
+Types are written as: integer, number, string, boolean, list<T>, or a record { field: T, other: T }. A field written name?: T is optional and may be absent from the value entirely.
+
 Implement precisely what the specification states. Do not add behaviour it does not describe, and do not omit behaviour it does describe.`;
 
 export function buildCompilerInput(program: Program): string {

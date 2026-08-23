@@ -2,8 +2,9 @@ import { parseEars } from '../../ears/parser.js';
 import type { Criterion } from '../../ears/types.js';
 import type {
   Field, Interface, ParseDiagnostic, ParsedProgram, Program,
-  ScalarType, ShallRequirement, ShallType,
+  ShallRequirement, ShallType,
 } from './types.js';
+import { parseType, TypeError as TypeParseError } from './type-parser.js';
 
 /**
  * Parser for `.shall` source.
@@ -20,35 +21,24 @@ const FIELD = /^(input|output)\s+([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.+?)\s*$/;
 const REQUIREMENT = /^Requirement\s+(\d+)\s*:\s*(.+?)\s*$/i;
 const COMMENT = /^\s*(#|\/\/)/;
 
-const SCALARS = new Set<string>(['integer', 'number', 'string', 'boolean']);
-const LIST = /^list\s*<\s*([a-z]+)\s*>$/;
-
-function parseType(raw: string, line: number, diagnostics: ParseDiagnostic[]): ShallType | null {
-  const text = raw.trim();
-  if (SCALARS.has(text)) return text as ScalarType;
-
-  const list = text.match(LIST);
-  if (list) {
-    const inner = list[1]!;
-    if (SCALARS.has(inner)) return { list: inner as ScalarType };
+/**
+ * Read a type expression, converting a parse failure into a diagnostic that
+ * points at the column where it went wrong.
+ */
+function readType(raw: string, line: number, diagnostics: ParseDiagnostic[]): ShallType | null {
+  try {
+    return parseType(raw);
+  } catch (err) {
+    const e = err as TypeParseError;
     diagnostics.push({
       line,
-      message: `unknown element type "${inner}" — lists may hold ${[...SCALARS].join(', ')}`,
+      message: `${e.message}${typeof e.column === 'number' ? ` (at "${raw.trim()}")` : ''}`,
       fatal: true,
     });
     return null;
   }
-
-  diagnostics.push({
-    line,
-    message: `unknown type "${text}" — expected one of ${[...SCALARS].join(', ')} or list<T>`,
-    fatal: true,
-  });
-  return null;
 }
 
-// @shall shall-language/1.1
-// @shall shall-language/1.4
 export function parseShall(source: string, path: string): ParsedProgram {
   const lines = source.split(/\r?\n/);
   const diagnostics: ParseDiagnostic[] = [];
@@ -118,7 +108,7 @@ export function parseShall(source: string, path: string): ParsedProgram {
         continue;
       }
       const [, kind, fieldName, typeText] = fieldMatch;
-      const type = parseType(typeText!, lineNo, diagnostics);
+      const type = readType(typeText!, lineNo, diagnostics);
       if (!type) continue;
 
       const target = kind === 'input' ? inputs : outputs;

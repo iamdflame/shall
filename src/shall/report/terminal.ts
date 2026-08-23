@@ -220,6 +220,8 @@ export function renderAmbiguity(input: AmbiguityReportInput): string {
  *
  * So the number is always printed, not only when it is bad.
  */
+// @shall specification-coverage/1.2
+// @shall specification-coverage/1.3
 export function renderCoverage(
   program: Program,
   coverage: CoverageReport,

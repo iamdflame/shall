@@ -6,7 +6,7 @@ import { programCriteria } from '../dist/shall/lang/types.js';
 import { structuralProbes } from '../dist/shall/oracle/probes.js';
 import { runDifferential } from '../dist/shall/oracle/differential.js';
 import { attribute, lintVagueness } from '../dist/shall/attribute/attribute.js';
-import { renderAmbiguity, renderConformance } from '../dist/shall/report/terminal.js';
+import { renderAmbiguity, renderSuccess, renderConformance } from '../dist/shall/report/terminal.js';
 import { checkConformance } from '../dist/shall/conform/check.js';
 import { deriveExpectations } from '../dist/shall/conform/expectations.js';
 import { measureCoverage } from '../dist/shall/coverage/coverage.js';
@@ -160,4 +160,33 @@ test('the conformance report names the clause and shows the contradiction', () =
     if (previous === undefined) delete process.env.NO_COLOR;
     else process.env.NO_COLOR = previous;
   }
+});
+
+// @shall specification-coverage/1.3
+test('an accepted build reports coverage too, so agreement is never shown without its scope', () => {
+  const probes = structuralProbes(program, 40);
+  // One source, three times: unanimous by construction.
+  const oracle = runDifferential(
+    ['a', 'b', 'c'].map((id) => ({ modelId: id, label: `reader-${id}`, source: SPLITS_HYPHENS })),
+    { probes, executionTimeoutMs: 500 },
+  );
+  assert.equal(oracle.divergences.length, 0, 'fixture must agree');
+
+  const out = renderSuccess({
+    program,
+    oracle,
+    coverage: measureCoverage(program, probes),
+    bounds: boundaries(program, probes),
+    targeted: 0,
+    vagueness: [],
+    failures: [],
+    outputPath: '(check only)',
+    cachedCount: 0,
+    usage: { input: 0, output: 0 },
+  });
+
+  assert.match(out, /UNAMBIGUOUS/);
+  // The point: a green verdict must still say what it did and did not test.
+  assert.match(out, /SPECIFICATION COVERAGE/);
+  assert.match(out, /criteria engaged by at least one of \d+ probes/);
 });

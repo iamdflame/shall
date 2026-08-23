@@ -69,6 +69,7 @@ const IRREGULAR: Record<string, string> = {
   matrices: 'matrix', vertices: 'vertex', criteria: 'criterion',
 };
 
+// @shall specification-coverage/2.1
 export function stem(word: string): string {
   const w = word.toLowerCase();
   if (IRREGULAR[w]) return IRREGULAR[w]!;
@@ -150,6 +151,7 @@ function numbersIn(text: string): number[] {
  * Derived from the document rather than hand-listed, so it holds for domains
  * whose verbs we have never seen.
  */
+// @shall specification-coverage/2.3
 function responseVerbs(program: Program): Set<string> {
   const verbs = new Set<string>();
   for (const criterion of programCriteria(program)) {
@@ -160,6 +162,8 @@ function responseVerbs(program: Program): Set<string> {
   return verbs;
 }
 
+// @shall specification-coverage/2.2
+// @shall specification-coverage/2.4
 export function vocabulary(program: Program): Map<string, Set<string>> {
   const inputNames = program.interface.inputs.map((f) => ({ field: f.name, words: terms(f.name) }));
   const verbs = responseVerbs(program);
@@ -196,6 +200,7 @@ export function vocabulary(program: Program): Map<string, Set<string>> {
  * would be invisible to every check built on top of it. A declared name is
  * never noise, so it is also matched directly as a whole word.
  */
+// @shall specification-coverage/2.5
 export function namesField(clause: string, field: string): boolean {
   const clauseTerms = terms(clause);
   if ([...terms(field)].some((t) => clauseTerms.has(t))) return true;
@@ -223,6 +228,7 @@ export interface Leaf {
  * `order.subtotal` varies, and a check that only inspected top-level input
  * names would never see it.
  */
+// @shall specification-coverage/2.6
 export function leaves(value: unknown, type: ShallType, path: string): Leaf[] {
   if (isRecordType(type)) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
@@ -341,6 +347,8 @@ const NUM = String.raw`(-?\d+(?:\.\d+)?|[a-z]+)`;
  * what it pays out. Treating that fifty as a threshold would send probe
  * generation chasing a fifty-element list to satisfy a rule about one die.
  */
+// @shall specification-coverage/4.1
+// @shall specification-coverage/4.2
 export function guardNumbers(criterion: Criterion): number[] {
   const { trigger, condition, state, context, response } = criterion.clauses;
   const guard = [trigger, condition, state, context].filter(Boolean).join(' ');
@@ -407,6 +415,7 @@ function fieldNames(type: ShallType): string[] {
  * does. So it is engaged by precisely the probes that engage no other clause,
  * which is a stronger statement than lexical matching could make anyway.
  */
+// @shall specification-coverage/3.1
 export function isFallback(criterion: Criterion): boolean {
   const { trigger, condition, state, context } = criterion.clauses;
   const guard = [trigger, condition, state, context].filter(Boolean).join(' ');
@@ -422,6 +431,8 @@ export function isFallback(criterion: Criterion): boolean {
  * Shared by coverage and attribution so the two can never disagree about which
  * clauses a run exercised.
  */
+// @shall specification-coverage/3.2
+// @shall specification-coverage/3.3
 export function engagementMatrix(
   program: Program,
   probes: Probe[],
@@ -453,6 +464,8 @@ export function engagementMatrix(
 
 /* ── the report ────────────────────────────────────────────────────────── */
 
+// @shall specification-coverage/1.1
+// @shall specification-coverage/1.4
 export function measureCoverage(program: Program, probes: Probe[]): CoverageReport {
   const criteria = programCriteria(program).filter((c) => c.pattern !== 'malformed');
   const matrix = engagementMatrix(program, probes);

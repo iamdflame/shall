@@ -239,6 +239,7 @@ async function analyse(file: string, flags: Flags) {
   // the interface and know nothing about what the clauses say, which is why
   // they can leave a stated boundary untouched - and a boundary is exactly
   // where two readers are most likely to part company.
+  // @shall specification-coverage/5.5
   const targeted = targetedProbes(program, probes, Math.max(8, Math.round(probeLimit * 0.15)));
   probes = [...probes, ...targeted];
 

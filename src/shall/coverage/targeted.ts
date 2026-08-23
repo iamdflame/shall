@@ -44,6 +44,7 @@ export interface Boundary {
   above: boolean;
 }
 
+// @shall specification-coverage/4.3
 export function isStraddled(b: Boundary): boolean {
   return b.below && b.on && b.above;
 }
@@ -100,6 +101,8 @@ export function boundaries(program: Program, probes: Probe[]): Boundary[] {
  * record by the single numeric field it carries, when it carries exactly one,
  * because "IF the order is below 50" is about the amount and not the record.
  */
+// @shall specification-coverage/4.4
+// @shall specification-coverage/4.5
 export function magnitudeOf(value: unknown, type: ShallType): number | undefined {
   if (isScalarType(type)) {
     if (type === 'integer' || type === 'number') {
@@ -119,6 +122,12 @@ export function magnitudeOf(value: unknown, type: ShallType): number | undefined
   return undefined;
 }
 
+// @shall specification-coverage/5.1
+// @shall specification-coverage/5.2
+// @shall specification-coverage/5.3
+// @shall specification-coverage/5.4
+// @shall specification-coverage/5.6
+// @shall specification-coverage/5.7
 export function targetedProbes(
   program: Program,
   probes: Probe[],

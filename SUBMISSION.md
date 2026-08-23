@@ -262,18 +262,19 @@ today has no way to know whether it means one thing. This gives them one.
 
 ## Project type
 
-**Developer tool** — a command-line compiler, language and CI gate, published as
-a Node package with a public API, plus a static project site.
+**CLI** — the option to select from the dropdown.
 
-If a single category is required: **Developer tool / CLI.**
+SHALL is a command-line compiler, a language and a CI gate, published as a Node
+package with a public API, plus a static project site.
 
-Secondary characterisations, if multiple apply:
-- **Programming language** — `.shall` is a real language with a grammar, a parser and a compiler
-- **Testing / QA tool** — the oracle is differential testing over generated inputs
-- **AI / agent infrastructure** — an ensemble compiler and an evaluation harness
+"Web app" would misdescribe it: the deployed site is the project page, not the
+product. "Tool" is the vaguer catch-all. Nobody consumes SHALL as an API — they
+run `shall check`.
 
-It is **not** a web app. The deployed site is the project page; the product is
-the CLI and library.
+Secondary characterisations, if more than one applies: **programming language**
+(`.shall` has a grammar, a parser and a compiler), **testing / QA tool** (the
+oracle is differential testing over generated inputs), and **AI / agent
+infrastructure** (an ensemble compiler and evaluation harness).
 
 ---
 

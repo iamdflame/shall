@@ -192,21 +192,19 @@ for free.
 
 
 ================================================================================
-FIELD 5 — PROJECT TYPE
+FIELD 5 — PROJECT TYPE   (dropdown)
 ================================================================================
------------------------------------------------------------------ copy from here
 
-Developer tool (command-line).
+  Choose:  CLI
 
-A CLI compiler, a language and a CI gate, published as a Node package with a
-public API, plus a static project site. Also reasonably described as a
-programming
-language, a testing/QA tool, and AI agent infrastructure. It is not a web app —
-the deployed site is the project page; the product is the CLI.
+  It is the most accurate option available. SHALL is a command-line compiler
+  and CI gate; the deployed site is the project page, not the product, so
+  "Web app" would misdescribe the submission. "Tool" is the vaguer catch-all
+  and says less. Nobody consumes SHALL as an API — they run "shall check".
 
------------------------------------------------------------------- copy to here
-
-
+  Everything else on this form already matches that choice: the demo is a
+  terminal, the setup notes are three shell commands, and the exit codes are
+  0, 1 and 2.
 
 ================================================================================
 FIELD 6 — PUBLIC REPOSITORY URL

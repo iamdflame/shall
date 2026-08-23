@@ -133,12 +133,11 @@ requirement.
 
 THE COST OF BEING WRONG
 
-The bundled order-total example contains a genuine ordering ambiguity: whether a
-shipping threshold applies before or after a coupon. On a subtotal of 51 with
-a 6 percent
-coupon, the two readings differ by 6.48 — one returns 51.78, the other 58.26.
-That is a billing incident,
-written in a sentence that reads perfectly.
+The bundled order-total example contains a genuine ordering ambiguity: whether
+a shipping threshold applies before or after a coupon. On a subtotal of 51 with
+a 6 percent coupon, one reading returns 51.78 and the other returns 58.26 — a
+difference of 6.48, in a sentence that reads perfectly. That is a billing
+incident nobody would catch in review.
 
 ------------------------------------------------------------------ copy to here
 

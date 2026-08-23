@@ -1,0 +1,52 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  html,body{margin:0;width:1600px;height:900px;background:#0B0E12;overflow:hidden;
+            font-family:'IBM Plex Mono',monospace}
+  .f{width:100%;height:100%;padding:56px 64px;box-sizing:border-box;display:flex;
+     flex-direction:column;
+     background-image:radial-gradient(circle at 88% 8%,rgba(255,107,74,.10),transparent 52%)}
+  .top{display:flex;align-items:center;gap:16px;margin-bottom:28px}
+  .url{margin-left:auto;font-size:20px;color:#5A6470}
+  .url b{color:#E9ECF1;font-weight:600}
+  .wm{font-size:24px;font-weight:600;letter-spacing:.34em;color:#5A6470;padding-left:.34em}
+  .claim{font-size:46px;font-weight:700;color:#E9ECF1;letter-spacing:-.02em;
+         line-height:1.14;margin-bottom:28px}
+  .claim em{font-style:normal;color:#FF6B4A}
+  .term{flex:0 0 auto;border:1px solid rgba(233,236,241,.12);border-radius:6px;background:#070A0D;
+        padding:22px 28px;font-size:19px;line-height:1.58;color:#E9ECF1;overflow:hidden;white-space:pre;margin:0}
+  .d{color:#5A6470} .r{color:#FF6B4A} .b{font-weight:700}
+  .foot{margin-top:22px;display:flex;justify-content:space-between;align-items:center;
+        font-size:19px;color:#5A6470}
+  .foot b{color:#E9ECF1;font-weight:600}
+</style></head><body>
+<div class="f">
+  <div class="top">
+    <svg viewBox="0 0 64 64" width="40" height="40" fill="none" stroke="#5A6470" stroke-width="8" stroke-linecap="round">
+      <path d="M 8 20 H 56"/><path d="M 10 40 q 7 -13 14 0 t 14 0 t 12 0"/>
+    </svg>
+    <div class="wm">SHALL</div>
+    <div class="url">github.com/<b>iamdflame/shall</b></div>
+  </div>
+
+  <div class="claim">Six AI models read the same spec.<br><em>They wrote three different programs.</em></div>
+
+  <div class="term"><span class="d">$</span> shall check word-count.shall
+
+<span class="r b">AMBIGUOUS SPECIFICATION</span>  WordCount
+<span class="d">──────────────────────────────────────────────────────────────</span>
+  the ensemble split into 3 distinct behaviours across 7 probes
+
+  <span class="d">word-count.shall:10</span>
+
+   <span class="d">│</span>  THE SYSTEM SHALL count the words in the text
+   <span class="d">│</span>                             <span class="r">~~~~~</span>
+   <span class="d">└─</span> <span class="r">a "word" is undefined until the spec says how text is split</span>
+
+   <span class="b">WITNESS</span>  text = <span class="b">"a-a"</span>
+
+     <span class="b">5</span>   <span class="d">gpt-4.1, o4-mini, gpt-5.2, gpt-5.6-terra</span>
+     <span class="b">2</span>   <span class="d">gpt-4o, gpt-5.6-luna</span></div>
+
+</div>
+</body></html>
